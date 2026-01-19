@@ -1,0 +1,24 @@
+# Next.js
+node_modules
+out
+.next
+.turbopack
+.vercel
+*.log
+
+# Testing
+coverage
+.nyc_output
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build
+build
+dist
+
+# OS
+.DS_Store
+Thumbs.db

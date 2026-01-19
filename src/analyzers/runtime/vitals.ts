@@ -24,42 +24,42 @@ export class WebVitalsCollector {
   constructor(config: WebVitalsConfig = {}) {
     this.data = {
       timestamp: Date.now(),
-      url: typeof window !== "undefined" ? window.location.href : "",
+      url: typeof (globalThis as any).window !== "undefined" ? (globalThis as any).window.location.href : "",
     };
     this.config = config;
   }
 
   collect(): void {
-    if (typeof window === "undefined") {
+    if (typeof (globalThis as any).window === "undefined") {
       console.log("⚠️  Web Vitals collection requires browser environment");
       return;
     }
 
-    onLCP((metric) => {
+    (globalThis as any).onLCP((metric: any) => {
       this.data.lcp = metric.value;
       this.logMetric("LCP", metric.value, 2500);
       this.reportMetric("lcp", metric.value);
     });
 
-    onINP((metric) => {
+    (globalThis as any).onINP((metric: any) => {
       this.data.inp = metric.value;
       this.logMetric("INP", metric.value, 200);
       this.reportMetric("inp", metric.value);
     });
 
-    onCLS((metric) => {
+    (globalThis as any).onCLS((metric: any) => {
       this.data.cls = metric.value;
       this.logMetric("CLS", metric.value, 0.1);
       this.reportMetric("cls", metric.value);
     });
 
-    onFCP((metric) => {
+    (globalThis as any).onFCP((metric: any) => {
       this.data.fcp = metric.value;
       this.logMetric("FCP", metric.value, 1800);
       this.reportMetric("fcp", metric.value);
     });
 
-    onTTFB((metric) => {
+    (globalThis as any).onTTFB((metric: any) => {
       this.data.ttfb = metric.value;
       this.logMetric("TTFB", metric.value, 800);
       this.reportMetric("ttfb", metric.value);

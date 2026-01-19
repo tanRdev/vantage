@@ -24,7 +24,7 @@
 - ⚙️ ISR/SSG detection
 - 📊 Historical trend tracking
 
-### Dashboard (Coming Soon - Week 4)
+### Dashboard
 - 🎨 Local embedded dashboard
 - 🚀 Optional GitHub Pages deployment
 - 📈 Interactive treemap visualizations (D3.js)
@@ -34,7 +34,7 @@
 - 🔍 Commit comparison view
 - 🌙 Dark mode support
 
-### CI/CD Integration (Coming Soon - Week 5)
+### CI/CD Integration
 - 🤖 GitHub Actions workflow
 - 💬 PR comment generation (formatted tables)
 - ✅ Status check integration
@@ -79,13 +79,10 @@ performance-enforcer init
 performance-enforcer check
 
 # Analyze bundles
-performance-enforcer bundle analyze
+performance-enforcer bundle
 
-# Launch dashboard (Week 4)
+# Launch dashboard
 performance-enforcer dashboard
-
-# Deploy dashboard to GitHub Pages (Week 4)
-performance-enforcer dashboard --deploy
 ```
 
 ## Configuration
@@ -95,6 +92,7 @@ Create a `.performance-enforcer.yml` file in your project root:
 ```yaml
 framework: nextjs
 
+# Bundle Analysis Configuration
 bundle:
   analysis: deep
   outputDir: .next
@@ -102,28 +100,37 @@ bundle:
   budgets:
     - path: "app/**/*.js"
       max: 100kb
+    - path: "chunks/main-*.js"
+      max: 150kb
   thresholds:
     regression: 10
     warning: 5
 
+# Runtime Performance Configuration
 runtime:
   routes:
     - /
     - /dashboard
     - /checkout
+  exclude:
+    - "/api/**"
+    - "/_next/**"
   thresholds:
     lcp: 2500
     inp: 200
     cls: 0.1
+    tbt: 300
+  lighthouse:
+    numberOfRuns: 3
+    preset: desktop
+    throttling: fast-3g
 ```
-
-See [Configuration Reference](docs/configuration.md) for all options.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize configuration file |
+| `init` | Initialize configuration |
 | `check` | Run all performance checks |
 | `bundle` | Analyze bundle size and composition |
 | `dashboard` | Launch performance dashboard |
@@ -149,13 +156,16 @@ See [Next.js Guide](docs/nextjs-guide.md) for detailed setup.
 
 ## CI/CD Integration
 
-### GitHub Actions (Week 5)
+### GitHub Actions
 
 Create `.github/workflows/performance.yml`:
 
 ```yaml
 name: Performance Checks
-on: [pull_request]
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   performance:
@@ -167,17 +177,44 @@ jobs:
       - run: npx performance-enforcer check
 ```
 
-See [CI/CD Setup](docs/ci-setup.md) for GitLab, Bitbucket (planned).
+See [CI/CD Setup](docs/ci-setup.md) for detailed configuration.
+
+## Dashboard
+
+### Local Development
+
+```bash
+performance-enforcer dashboard
+```
+
+Opens at http://localhost:3000
+
+### Deploy to GitHub Pages
+
+```bash
+performance-enforcer dashboard --deploy
+```
+
+Follow the instructions to deploy your dashboard to GitHub Pages.
+
+## Examples
+
+See `examples/` directory for sample Next.js apps configured with Performance Enforcer.
+
+## Contributing
+
+Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 
 ## Roadmap
 
-### v1.0 (Current)
+### v1.0
 - [x] CLI foundation
-- [x] Bundle analysis (deep, treemaps)
-- [x] Runtime metrics (Lighthouse, Core Web Vitals)
-- [ ] Dashboard (Week 4)
-- [ ] GitHub Actions integration (Week 5)
+- [x] Bundle analysis
+- [x] Runtime metrics
+- [x] Dashboard
+- [x] GitHub Actions integration
 - [ ] Complete documentation
+- [ ] Example apps
 
 ### v2.0 (Planned)
 - [ ] Turbopack support
@@ -187,12 +224,7 @@ See [CI/CD Setup](docs/ci-setup.md) for GitLab, Bitbucket (planned).
 - [ ] SvelteKit support
 - [ ] GitLab CI integration
 - [ ] Bitbucket Pipelines integration
-- [ ] Integration tests
 - [ ] Dashboard config editor via UI
-
-## Contributing
-
-Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 
 ## License
 

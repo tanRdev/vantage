@@ -291,23 +291,6 @@ export class TreemapGenerator {
     }
   }
 
-  generateMarkdown(data: TreemapNode[]): string {
-    let markdown = "## Bundle Composition\n\n";
-
-    markdown += `| Module | Size | Percentage |\n`;
-    markdown += `|--------|------|------------|\n`;
-
-    const totalSize = data.reduce((sum, node) => sum + node.value, 0);
-
-    for (const node of data.sort((a, b) => b.value - a.value)) {
-      const size = this.formatBytes(node.value);
-      const percentage = ((node.value / totalSize) * 100).toFixed(2);
-      markdown += `| ${node.name} | ${size} | ${percentage}% |\n`;
-    }
-
-    return markdown;
-  }
-
   private formatBytes(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;

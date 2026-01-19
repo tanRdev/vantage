@@ -163,37 +163,4 @@ export class NextjsParser {
 
     return chunks;
   }
-
-  analyzeModuleDependencies(): ModuleInfo[] {
-    const manifest = this.parseBuildManifest();
-    const modules: ModuleInfo[] = [];
-
-    if (!manifest) {
-      return modules;
-    }
-
-    const moduleSet = new Map<string, ModuleInfo>();
-
-    for (const [route, file] of Object.entries(manifest.pages || {})) {
-      const moduleName = this.getModuleNameFromPath(file);
-
-      if (!moduleSet.has(moduleName)) {
-        moduleSet.set(moduleName, {
-          name: moduleName,
-          size: 0,
-          path: file,
-          dependencies: [],
-          isDuplicate: false,
-          isDeadCode: false,
-        });
-      }
-    }
-
-    return Array.from(moduleSet.values());
-  }
-
-  private getModuleNameFromPath(filePath: string): string {
-    const parts = filePath.split(path.sep);
-    return parts[parts.length - 1].replace(/\.(js|jsx|ts|tsx)$/, "");
-  }
 }

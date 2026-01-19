@@ -1,11 +1,11 @@
-# Performance Enforcer
+## Performance Enforcer
 
 > Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration
 
 [![npm version](https://badge.fury.io/js/performance-enforcer.svg)](https://www.npmjs.com/package/performance-enforcer)
-[![License: MIT](https://img.shields.io/badge/Lense/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests/passing/Performance%20Tests.svg)](https://img.shields.io/badge/tests/passing/Performance%20Tests.svg)
-[![Issues](https://img.shields.io/badge/issues/open/0.svg)](https://img.shields.io/badge/issues/open/0.svg)
+[![License: MIT](https://img.shields.io/badge/License/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests/passing/Performance%209Tests/20Tests.svg)](https://img.shields.io/badge/tests/passing/Performance%209Tests20Tests.svg))
+[![Type Safety](https://img.shields.io/badge/types/TypeScript-safe-blue)](https://img.shields.io/badge/types/TypeScript-safe-blue.svg)]
 
 ## Features
 
@@ -27,10 +27,9 @@
 - 📊 Historical trend tracking
 
 ### Dashboard
-- 🎨 Local embedded dashboard
-- 🚀 Optional GitHub Pages deployment
-- 📈 Interactive treemap visualizations (D3.js)
-- 📊 Trend charts (LCP, INP, CLS, bundle size over time)
+- 🎨 Local embedded dashboard with shadcn UI components
+- 🚀 Interactive treemap visualizations (D3.js)
+- 📈 Trend charts (LCP, INP, CLS, bundle size over time)
 - 🗺 Per-route performance breakdown
 - 📅 Build history timeline
 - 🔍 Commit comparison view
@@ -42,6 +41,7 @@
 - ✅ Status check integration
 - 📉 Automatic baseline comparison
 - 🔄 Multi-run Lighthouse (median values)
+- 📦 Detailed results upload as artifacts
 
 ### Configuration
 - ⚙️ YAML-based config (`.performance-enforcer.yml`)
@@ -94,6 +94,7 @@ Create a `.performance-enforcer.yml` file in your project root:
 ```yaml
 framework: nextjs
 
+# Bundle Analysis Configuration
 bundle:
   analysis: deep
   outputDir: .next
@@ -107,6 +108,7 @@ bundle:
     regression: 10
     warning: 5
 
+# Runtime Performance Configuration
 runtime:
   routes:
     - /
@@ -120,7 +122,7 @@ runtime:
     inp: 200
     cls: 0.1
     tbt: 300
-  lighthouse:
+    lighthouse:
     numberOfRuns: 3
     preset: desktop
     throttling: fast-3g
@@ -146,7 +148,7 @@ runtime:
 ### Pages Router
 - ✅ Fully supported
 - ✅ Auto-detects routes from `pages/` directory
-- ✅ Handles dynamic routes
+- ✅ Handles dynamic routes (`[id]`, `[...slug]`)
 
 ### Turbopack
 - 🔄 Planned for v2.0
@@ -197,12 +199,12 @@ jobs:
 
       - name: Post results to PR
         if: github.event_name == 'pull_request'
-        run: |
-          node dist/integrations/github.js post-comment
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+          run: |
+            node dist/integrations/github.js post-comment
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_REPOSITORY: ${{ github.repository }}
+            GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Set status check
         if: github.event_name == 'pull_request'
@@ -210,16 +212,16 @@ jobs:
             node dist/integrations/github.js set-status
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GITHUB_REPOSITORY: $ GitHub_REPOSITORY
-            GITHUB_SHA: {{ github.sha }}
+            GITHUB_REPOSITORY: ${{ github.repository }}
+            GITHUB_SHA: ${{ github.sha }}
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-results
-          path: .performance-enforcer/
-          retention-days: 30
+          uses: actions/upload-artifact@v4
+          with:
+            name: performance-results
+            path: .performance-enforcer/
+            retention-days: 30
 ```
 
 See [CI/CD Setup](docs/ci-setup.md) for detailed configuration.
@@ -240,11 +242,22 @@ Opens at http://localhost:3000
 performance-enforcer dashboard --deploy
 ```
 
-Follow the instructions to deploy your dashboard to GitHub Pages.
+Follow instructions to deploy your dashboard to GitHub Pages.
 
 ## Examples
 
 See `examples/` directory for sample Next.js apps configured with Performance Enforcer.
+
+## Examples
+
+### Example Next.js App
+
+- Working Next.js 15 app with App Router
+- Sample home page component
+- Performance configuration
+- TypeScript + React configuration
+
+See [examples/nextjs-app/](examples/nextjs-app/README.md) for setup.
 
 ## Contributing
 
@@ -256,12 +269,11 @@ Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 - [x] CLI foundation
 - [x] Bundle analysis
 - [x] Runtime metrics
-- [x] Dashboard
+- [x] Dashboard with shadcn UI
 - [x] GitHub Actions integration
+- [x] Comprehensive testing
 - [x] Complete documentation
 - [x] Example apps
-- [ ] Testing & validation
-- [ ] Release prep
 
 ### v2.0 (Planned)
 - [ ] Turbopack support
@@ -272,7 +284,9 @@ Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 - [ ] GitLab CI integration
 - [ ] Bitbucket Pipelines integration
 - [ ] Dashboard config editor via UI
+- [ ] GitLab CI integration
 
 ## License
 
 MIT © [Your Name]
+

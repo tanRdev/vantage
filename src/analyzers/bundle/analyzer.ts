@@ -62,47 +62,6 @@ export class BundleAnalyzer {
     };
   }
 
-  compareBundles(
-    current: Chunk[],
-    previous: Chunk[]
-  ): BundleDiff {
-    const currentMap = new Map(current.map(c => [c.id, c]));
-    const previousMap = new Map(previous.map(c => [c.id, c]));
-
-    const added = current.filter(
-      c => !previousMap.has(c.id)
-    );
-
-    const removed = previous.filter(
-      c => !currentMap.has(c.id)
-    );
-
-    const modified: BundleDiff["modifiedChunks"] = [];
-
-    for (const currentChunk of current) {
-      const previousChunk = previousMap.get(currentChunk.id);
-
-      if (previousChunk && previousChunk.size !== currentChunk.size) {
-        modified.push({
-          chunk: currentChunk,
-          oldSize: previousChunk.size,
-          newSize: currentChunk.size,
-          sizeDelta: currentChunk.size - previousChunk.size,
-        });
-      }
-    }
-
-    const totalSizeChange = current.reduce((sum, c) => sum + c.size, 0) -
-      previous.reduce((sum, c) => sum + c.size, 0);
-
-    return {
-      addedChunks: added,
-      removedChunks: removed,
-      modifiedChunks: modified,
-      totalSizeChange,
-    };
-  }
-
   generateTreemapData(chunks: Chunk[]): TreemapNode {
     const children = chunks.map(chunk => ({
       name: chunk.name,

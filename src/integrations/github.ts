@@ -1,5 +1,6 @@
 import { Octokit } from "octokit";
 import * as fs from "fs";
+import { formatMs, formatBytes } from "../utils/formatters.js";
 
 export interface PerformanceResults {
   bundleSize?: {
@@ -181,12 +182,12 @@ export class GitHubIntegration {
 
       if (results.runtime.lcp !== undefined) {
         const status = this.getMetricStatus(results.runtime.lcp, 2500);
-        comment += `| LCP | ${this.formatMs(results.runtime.lcp)} | ${status} |\n`;
+        comment += `| LCP | ${formatMs(results.runtime.lcp)} | ${status} |\n`;
       }
 
       if (results.runtime.inp !== undefined) {
         const status = this.getMetricStatus(results.runtime.inp, 200);
-        comment += `| INP | ${this.formatMs(results.runtime.inp)} | ${status} |\n`;
+        comment += `| INP | ${formatMs(results.runtime.inp)} | ${status} |\n`;
       }
 
       if (results.runtime.cls !== undefined) {
@@ -210,10 +211,10 @@ export class GitHubIntegration {
 
       const delta = results.bundleSize.delta;
 
-      const deltaFormatted = delta > 0 ? `+${this.formatBytes(delta)}` : this.formatBytes(delta);
+      const deltaFormatted = delta > 0 ? `+${formatBytes(delta)}` : formatBytes(delta);
       const deltaStatus = delta > 0 ? "INCREASE" : "DECREASE";
 
-      comment += `| Size | ${this.formatBytes(results.bundleSize.current)} |\n`;
+      comment += `| Size | ${formatBytes(results.bundleSize.current)} |\n`;
       comment += `| Change | ${deltaFormatted} ${deltaStatus} |\n`;
       comment += `| Status | ${results.bundleSize.status === "pass" ? "PASS" : results.bundleSize.status === "warn" ? "WARN" : "FAIL"} |\n`;
 
@@ -244,15 +245,5 @@ export class GitHubIntegration {
     if (value <= threshold) return "PASS";
     if (value <= threshold * 1.1) return "WARN";
     return "FAIL";
-  }
-
-  private formatMs(value: number): string {
-    return `${value.toFixed(0)}ms`;
-  }
-
-  private formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 }

@@ -22,6 +22,9 @@
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.5.0"
   }

@@ -1,7 +1,7 @@
 import { Octokit } from "octokit";
-import * as fs from "fs";
+import type * as fs from "fs";
 
-interface PerformanceResults {
+export interface PerformanceResults {
   bundleSize?: {
     current: number;
     previous: number;
@@ -18,21 +18,20 @@ interface PerformanceResults {
   timestamp: number;
 }
 
-interface GitHubCommentResult {
+export interface GitHubCommentResult {
   id: number;
-  body: string;
   html_url: string;
 }
 
-interface GitHubStatusCheckResult {
+export interface GitHubStatusCheckResult {
   id: number;
-  state: "pending" | "success" | "failure" | "error";
+  state: "success" | "failure" | "pending";
   description: string;
   context: string;
 }
 
-class GitHubIntegration {
-  private octokit: Octokit;
+export class GitHubIntegration {
+  private octokit: InstanceType<Octokit>;
   private owner: string;
   private repo: string;
   private resultsPath: string;
@@ -66,6 +65,7 @@ class GitHubIntegration {
     }
 
     const comment = this.generateComment(results);
+    const runId = Date.now();
 
     try {
       const result = await this.octokit.rest.issues.createComment({
@@ -76,9 +76,9 @@ class GitHubIntegration {
       });
 
       console.log(`Posted performance comment to PR #${prNumber}`);
-      console.log(`  Comment URL: ${result.data.html_url}`);
+      console.log(`Comment URL: ${result.data.html_url}`);
     } catch (error: unknown) {
-      console.error("Failed to post comment:", error);
+      console.error("Failed to post comment:", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -108,7 +108,7 @@ class GitHubIntegration {
 
       console.log(`Updated performance comment on PR #${prNumber}`);
     } catch (error: unknown) {
-      console.error("Failed to update comment:", error);
+      console.error("Failed to update comment:", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -123,7 +123,7 @@ class GitHubIntegration {
     const hasFailures = this.hasFailures(results);
     const hasWarnings = this.hasWarnings(results);
 
-    let state: "success" | "failure" | "error" = "success";
+    let state: "success" | "failure" = "success";
     let description = "All performance checks passed";
 
     if (hasFailures) {
@@ -138,7 +138,7 @@ class GitHubIntegration {
       await this.octokit.rest.repos.createCommitStatus({
         owner: this.owner,
         repo: this.repo,
-        sha: sha,
+        sha,
         state,
         description,
         context: "performance-enforcer",
@@ -146,7 +146,7 @@ class GitHubIntegration {
 
       console.log(`Set status check: ${state} - ${description}`);
     } catch (error: unknown) {
-      console.error("Failed to set status check:", error);
+      console.error("Failed to set status check:", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -159,14 +159,14 @@ class GitHubIntegration {
         per_page: 100,
       });
 
-      const botComment = comments.find((comment: GitHubCommentResult) =>
+      const botComment = comments.find(comment =>
         comment.user?.type === "Bot" &&
         comment.body?.includes("## Performance Results")
       );
 
       return botComment?.id || null;
-    } catch (error: unknown) {
-      console.error("Failed to find existing comment:", error);
+    } catch (error) {
+      console.error("Failed to find existing comment:", error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -179,22 +179,22 @@ class GitHubIntegration {
       comment += `| Metric | Value | Status |\n`;
       comment += `|--------|-------|--------|\n`;
 
-      if (results.runtime.lcp) {
+      if (results.runtime.lcp !== undefined) {
         const status = this.getMetricStatus(results.runtime.lcp, 2500);
         comment += `| LCP | ${this.formatMs(results.runtime.lcp)} | ${status} |\n`;
       }
 
-      if (results.runtime.inp) {
+      if (results.runtime.inp !== undefined) {
         const status = this.getMetricStatus(results.runtime.inp, 200);
         comment += `| INP | ${this.formatMs(results.runtime.inp)} | ${status} |\n`;
       }
 
-      if (results.runtime.cls) {
+      if (results.runtime.cls !== undefined) {
         const status = this.getMetricStatus(results.runtime.cls, 0.1);
         comment += `| CLS | ${results.runtime.cls.toFixed(3)} | ${status} |\n`;
       }
 
-      if (results.runtime.score) {
+      if (results.runtime.score !== undefined) {
         const score = results.runtime.score;
         const status = score >= 90 ? "✅" : score >= 80 ? "⚠️" : "❌";
         comment += `| Score | ${score} | ${status} |\n`;
@@ -206,15 +206,16 @@ class GitHubIntegration {
     if (results.bundleSize) {
       comment += "### Bundle Analysis\n\n";
       comment += `| Metric | Value |\n`;
-      comment += `|--------|-------|\n`;
+      comment += `|--------|--------|\n`;
 
       const delta = results.bundleSize.delta;
+
       const deltaFormatted = delta > 0 ? `+${this.formatBytes(delta)}` : this.formatBytes(delta);
       const deltaStatus = delta > 0 ? "📈" : "📉";
 
       comment += `| Size | ${this.formatBytes(results.bundleSize.current)} |\n`;
       comment += `| Change | ${deltaFormatted} ${deltaStatus} |\n`;
-      comment += `| Status | ${results.bundleSize.status === "pass" ? "✅" : results.bundleSize.status === "warn" ? "⚠️" : "❌"} |\n`;
+      comment += `| Status | ${results.bundleSize.status === "pass" ? "✅" : results.bundleSize.status === "warn" ? "⚠️" : "❌"} |\n";
 
       comment += "\n";
     }
@@ -255,48 +256,3 @@ class GitHubIntegration {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 }
-
-async function main() {
-  const args = process.argv.slice(2);
-  const command = args[0];
-
-  if (command !== "post-comment" && command !== "set-status") {
-    console.log("Usage: node github.js [post-comment|set-status]");
-    process.exit(1);
-  }
-
-  const token = process.env.GITHUB_TOKEN;
-  const repository = process.env.GITHUB_REPOSITORY;
-  const prNumber = process.env.GITHUB_PR_NUMBER;
-  const sha = process.env.GITHUB_SHA;
-
-  if (!token || !repository) {
-    console.error("GITHUB_TOKEN and GITHUB_REPOSITORY must be set");
-    process.exit(1);
-  }
-
-  const integration = new GitHubIntegration(token, repository);
-
-  try {
-    if (command === "post-comment") {
-      if (!prNumber) {
-        console.error("GITHUB_PR_NUMBER must be set for post-comment");
-        process.exit(1);
-      }
-
-      await integration.postComment(parseInt(prNumber, 10));
-    } else if (command === "set-status") {
-      if (!sha) {
-        console.error("GITHUB_SHA must be set for set-status");
-        process.exit(1);
-      }
-
-      await integration.setStatus(sha);
-    }
-  } catch (error: unknown) {
-    console.error("Failed to execute command:", error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-}
-
-main();

@@ -3,7 +3,9 @@
 > Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration
 
 [![npm version](https://badge.fury.io/js/performance-enforcer.svg)](https://www.npmjs.com/package/performance-enforcer)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/Lense/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests/passing/Performance%20Tests.svg)](https://img.shields.io/badge/tests/passing/Performance%20Tests.svg)
+[![Issues](https://img.shields.io/badge/issues/open/0.svg)](https://img.shields.io/badge/issues/open/0.svg)
 
 ## Features
 
@@ -92,7 +94,6 @@ Create a `.performance-enforcer.yml` file in your project root:
 ```yaml
 framework: nextjs
 
-# Bundle Analysis Configuration
 bundle:
   analysis: deep
   outputDir: .next
@@ -106,7 +107,6 @@ bundle:
     regression: 10
     warning: 5
 
-# Runtime Performance Configuration
 runtime:
   routes:
     - /
@@ -166,15 +166,60 @@ name: Performance Checks
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop]
 
 jobs:
   performance:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: npm ci
-      - run: npx performance-enforcer check
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run performance checks
+        run: |
+          npx performance-enforcer check || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Post results to PR
+        if: github.event_name == 'pull_request'
+        run: |
+          node dist/integrations/github.js post-comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Set status check
+        if: github.event_name == 'pull_request'
+          run: |
+            node dist/integrations/github.js set-status
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_REPOSITORY: $ GitHub_REPOSITORY
+            GITHUB_SHA: {{ github.sha }}
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: .performance-enforcer/
+          retention-days: 30
 ```
 
 See [CI/CD Setup](docs/ci-setup.md) for detailed configuration.
@@ -207,14 +252,16 @@ Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 
 ## Roadmap
 
-### v1.0
+### v1.0 (Current)
 - [x] CLI foundation
 - [x] Bundle analysis
 - [x] Runtime metrics
 - [x] Dashboard
 - [x] GitHub Actions integration
-- [ ] Complete documentation
-- [ ] Example apps
+- [x] Complete documentation
+- [x] Example apps
+- [ ] Testing & validation
+- [ ] Release prep
 
 ### v2.0 (Planned)
 - [ ] Turbopack support

@@ -133,12 +133,13 @@ export class TreemapGenerator {
 
     treemap(root);
 
-    const svg = d3.select("#treemap")
-      .append("svg")
+    const container = d3.select("#treemap")
+      .append("div")
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .style("position", "relative");
 
-    const nodes = svg.selectAll(".node")
+    const nodes = container.selectAll(".node")
       .data(root.leaves())
       .enter()
       .append("div")
@@ -203,7 +204,8 @@ export class TreemapGenerator {
     }
 
     window.addEventListener("resize", () => {
-      svg.remove();
+      container.remove();
+      d3.select(".tooltip").remove();
       const newWidth = window.innerWidth - 40;
       const newHeight = window.innerHeight - 40;
 
@@ -220,12 +222,13 @@ export class TreemapGenerator {
 
       newTreemap(newRoot);
 
-      const newSvg = d3.select("#treemap")
-        .append("svg")
+      const newContainer = d3.select("#treemap")
+        .append("div")
         .attr("width", newWidth)
-        .attr("height", newHeight);
+        .attr("height", newHeight)
+        .style("position", "relative");
 
-      const newNodes = newSvg.selectAll(".node")
+      const newNodes = newContainer.selectAll(".node")
         .data(newRoot.leaves())
         .enter()
         .append("div")
@@ -276,11 +279,16 @@ export class TreemapGenerator {
           .style("opacity", 0);
       });
     });
-  </script>
+    </script>
 </body>
 </html>`;
 
-    fs.writeFileSync(outputPath, html, "utf-8");
+    try {
+      fs.writeFileSync(outputPath, html, "utf-8");
+    } catch (error) {
+      console.error(`Failed to write treemap HTML to ${outputPath}:`, error);
+      throw error;
+    }
   }
 
   generateMarkdown(data: TreemapNode[]): string {

@@ -1,5 +1,12 @@
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from "web-vitals";
-import type { WindowWithWebVitals, Metric } from "../types/window.js";
+import "../types/window";
+
+export interface Metric {
+  name: string;
+  value: number;
+  rating: "good" | "needs-improvement" | "poor";
+  delta?: number;
+}
 
 export interface WebVitalsData {
   lcp?: number;
@@ -29,8 +36,6 @@ export class WebVitalsCollector {
   }
 
   collect(): void {
-    const win = window as WindowWithWebVitals;
-
     if (typeof window === "undefined") {
       console.log("⚠️  Web Vitals collection requires browser environment");
       return;

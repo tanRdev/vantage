@@ -1,4 +1,5 @@
 import { Command } from "@oclif/core";
+import type * as FS from "fs";
 
 export default class Init extends Command {
   static description = "Initialize performance-enforcer configuration";
@@ -111,7 +112,7 @@ runtime:
 
     try {
       const fs = await import("fs");
-      const fsModule = fs as any;
+      const fsModule = fs as typeof FS;
 
       if (fsModule.existsSync(".performance-enforcer.yml") && !forceFlag) {
         console.log("\n⚠️  Config file already exists. Use --force to overwrite.");

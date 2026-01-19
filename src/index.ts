@@ -4,15 +4,21 @@ import { fileURLToPath } from "url";
 import * as path from "path";
 import * as fs from "fs";
 
+interface CommandModule {
+  id?: string;
+  description?: string;
+  run: (args: string[]) => Promise<void>;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function loadCommands(): Promise<any[]> {
+async function loadCommands(): Promise<CommandModule[]> {
   const commandsDir = path.join(__dirname, "commands");
 
   if (fs.existsSync(commandsDir)) {
     const files = fs.readdirSync(commandsDir);
-    const commands: any[] = [];
+    const commands: CommandModule[] = [];
 
     for (const file of files) {
       if (file.endsWith(".js")) {
@@ -57,7 +63,7 @@ async function main(): Promise<void> {
   const commandArgs = args.slice(1);
 
   const command = commands.find(
-    (cmd: any) => cmd.id === commandName || cmd.description?.toLowerCase().includes(commandName)
+    (cmd) => cmd.id === commandName || cmd.description?.toLowerCase().includes(commandName)
   );
 
   if (!command) {
@@ -67,8 +73,9 @@ async function main(): Promise<void> {
 
   try {
     await command.run(commandArgs);
-  } catch (error: any) {
-    console.error(`Error: ${error.message || error}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Error: ${message}`);
     process.exit(1);
   }
 }

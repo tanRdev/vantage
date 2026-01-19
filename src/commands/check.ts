@@ -4,7 +4,17 @@ import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { BundleAnalyzer } from "../analyzers/bundle/analyzer.js";
 import { RouteDetector } from "../analyzers/runtime/routes.js";
 import { LighthouseRunner } from "../analyzers/runtime/lighthouse.js";
-import { ThresholdEngine } from "../core/threshold.js";
+import { ThresholdEngine, ThresholdResult } from "../core/threshold.js";
+
+type MetricStatus = "pass" | "warn" | "fail";
+
+interface MetricResult {
+  name: string;
+  current: string;
+  previous: string;
+  delta: string;
+  status: MetricStatus;
+}
 
 export default class Check extends Command {
   static description = "Run all configured performance checks";
@@ -21,7 +31,7 @@ export default class Check extends Command {
       console.log("✅ Configuration loaded");
       console.log(`\nFramework: ${config.framework}`);
 
-      const results = [];
+      const results: MetricResult[] = [];
 
       if (config.runtime) {
         console.log(`\n📊 Running runtime metrics...`);
@@ -74,7 +84,7 @@ export default class Check extends Command {
                 current: `${result.lcp.toFixed(0)}ms`,
                 previous: "-",
                 delta: "-",
-                status: lcpResult.status as any,
+                status: lcpResult.status,
               });
             }
 
@@ -90,7 +100,7 @@ export default class Check extends Command {
                 current: `${result.inp.toFixed(0)}ms`,
                 previous: "-",
                 delta: "-",
-                status: inpResult.status as any,
+                status: inpResult.status,
               });
             }
 
@@ -106,7 +116,7 @@ export default class Check extends Command {
                 current: result.cls.toFixed(3),
                 previous: "-",
                 delta: "-",
-                status: clsResult.status as any,
+                status: clsResult.status,
               });
             }
 
@@ -128,19 +138,19 @@ export default class Check extends Command {
 
             const score = result.score * 100;
 
-            results.push({
-              name: `Score (${result.url.split("/").pop() || "/"})`,
-              current: `${score}`,
-              previous: "-",
-              delta: "-",
-              status: score >= 90 ? ("pass" as any) : ("fail" as any),
-            });
+              results.push({
+                name: `Score (${result.url.split("/").pop() || "/"})`,
+                current: `${score}`,
+                previous: "-",
+                delta: "-",
+                status: score >= 90 ? "pass" : "fail",
+              });
           }
 
           Reporter.printMetricTable(results);
 
           const shouldBlock = ThresholdEngine.shouldBlockPR(
-            results.map(r => ({ passed: r.status === "pass", delta: 0, status: r.status as any }))
+            results.map(r => ({ passed: r.status === "pass", delta: 0, status: r.status }))
           );
 
           if (shouldBlock) {

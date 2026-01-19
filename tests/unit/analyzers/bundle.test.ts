@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BundleAnalyzer, type Chunk } from "../../src/analyzers/bundle/analyzer";
-import Reporter from "../../src/core/reporter";
 
 vi.mock("../../src/core/reporter");
 

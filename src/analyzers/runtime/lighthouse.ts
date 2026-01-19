@@ -11,6 +11,14 @@ export interface LighthouseResult {
   runs: number;
 }
 
+export interface LighthouseRawResult {
+  lcp?: string;
+  cls?: string;
+  tbt?: string;
+  fcp?: string;
+  performanceScore?: string;
+}
+
 export interface LighthouseOptions {
   urls: string[];
   numberOfRuns: number;
@@ -39,7 +47,7 @@ export class LighthouseRunner {
   }
 
   private async runLighthouse(url: string): Promise<LighthouseResult> {
-    const runResults = [];
+    const runResults: LighthouseRawResult[] = [];
 
     for (let i = 0; i < this.options.numberOfRuns; i++) {
       console.log(`  Run ${i + 1}/${this.options.numberOfRuns}...`);
@@ -59,7 +67,7 @@ export class LighthouseRunner {
     return this.calculateMedian(runResults);
   }
 
-  private runSingleLighthouse(url: string, runIndex: number): any {
+  private runSingleLighthouse(url: string, runIndex: number): LighthouseRawResult {
     const outputFile = this.getOutputPath(url, runIndex);
     const throttling = this.getThrottlingConfig();
     const preset = this.getPresetConfig();
@@ -76,26 +84,23 @@ export class LighthouseRunner {
       `--upload.target=temporary-public-storage`,
     ].join(" ");
 
-    const output = execSync(command, {
+    execSync(command, {
       cwd: process.cwd(),
       encoding: "utf-8",
       stdio: "pipe",
     });
 
-    const result = this.parseLighthouseOutput(output);
+    const result = this.parseLighthouseOutput(command);
 
-    return {
-      url,
-      ...result,
-    };
+    return result;
   }
 
-  private calculateMedian(results: any[]): LighthouseResult {
-    const scores = results.map(r => r.score).sort((a, b) => a - b);
-    const lcps = results.map(r => r.lcp).sort((a, b) => a - b);
-    const clsValues = results.map(r => r.cls).sort((a, b) => a - b);
-    const tbts = results.map(r => r.tbt).sort((a, b) => a - b);
-    const fcps = results.map(r => r.fcp).sort((a, b) => a - b);
+  private calculateMedian(results: LighthouseRawResult[]): LighthouseResult {
+    const scores = this.extractMetricValues(results, "performanceScore").map(Number).sort((a, b) => a - b);
+    const lcps = this.extractMetricValues(results, "lcp").map(Number).sort((a, b) => a - b);
+    const clsValues = this.extractMetricValues(results, "cls").map(Number).sort((a, b) => a - b);
+    const tbts = this.extractMetricValues(results, "tbt").map(Number).sort((a, b) => a - b);
+    const fcps = this.extractMetricValues(results, "fcp").map(Number).sort((a, b) => a - b);
 
     const medianIndex = Math.floor(results.length / 2);
 
@@ -106,30 +111,43 @@ export class LighthouseRunner {
       cls: clsValues[medianIndex],
       tbt: tbts[medianIndex],
       fcp: fcps[medianIndex],
-      inp: results[0].inp,
+      inp: 0,
       runs: results.length,
     };
   }
 
-  private parseLighthouseOutput(output: string): any {
-    const lcpMatch = output.match(/Largest Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
-    const clsMatch = output.match(/Cumulative Layout Shift:\s*(\d+\.?\d*)/);
-    const tbtMatch = output.match(/Total Blocking Time:\s*(\d+\.?\d*)\s*ms/);
-    const fcpMatch = output.match(/First Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
-    const scoreMatch = output.match(/Performance score:\s*(\d+)/);
+  private parseLighthouseOutput(commandOutput: string): LighthouseRawResult {
+    const lcpMatch = commandOutput.match(/Largest Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
+    const clsMatch = commandOutput.match(/Cumulative Layout Shift:\s*(\d+\.?\d*)/);
+    const tbtMatch = commandOutput.match(/Total Blocking Time:\s*(\d+\.?\d*)\s*ms/);
+    const fcpMatch = commandOutput.match(/First Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
+    const scoreMatch = commandOutput.match(/Performance score:\s*(\d+)/);
 
     return {
-      score: scoreMatch ? parseInt(scoreMatch[1]) / 100 : 0,
-      lcp: lcpMatch ? parseFloat(lcpMatch[1]) : 0,
-      cls: clsMatch ? parseFloat(clsMatch[1]) : 0,
-      tbt: tbtMatch ? parseFloat(tbtMatch[1]) : 0,
-      fcp: fcpMatch ? parseFloat(fcpMatch[1]) : 0,
-      inp: 0,
+      url: "",
+      lcp: lcpMatch ? lcpMatch[1] : undefined,
+      cls: clsMatch ? clsMatch[1] : undefined,
+      tbt: tbtMatch ? tbtMatch[1] : undefined,
+      fcp: fcpMatch ? fcpMatch[1] : undefined,
+      performanceScore: scoreMatch ? scoreMatch[1] : undefined,
     };
   }
 
+  private extractMetricValues(results: LighthouseRawResult[], key: keyof LighthouseRawResult): string[] {
+    const values: string[] = [];
+
+    for (const result of results) {
+      const value = result[key];
+      if (value !== undefined) {
+        values.push(value);
+      }
+    }
+
+    return values;
+  }
+
   private getThrottlingConfig(): string {
-    const mapping = {
+    const mapping: Record<string, string> = {
       "fast-3g": "devtools",
       "slow-4g": "devtools",
       "offline": "offline",
@@ -139,7 +157,7 @@ export class LighthouseRunner {
   }
 
   private getPresetConfig(): string {
-    const mapping = {
+    const mapping: Record<string, string> = {
       desktop: "desktop",
       mobile: "mobile",
     };

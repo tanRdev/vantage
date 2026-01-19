@@ -18,6 +18,19 @@ interface PerformanceResults {
   timestamp: number;
 }
 
+interface GitHubCommentResult {
+  id: number;
+  body: string;
+  html_url: string;
+}
+
+interface GitHubStatusCheckResult {
+  id: number;
+  state: "pending" | "success" | "failure" | "error";
+  description: string;
+  context: string;
+}
+
 class GitHubIntegration {
   private octokit: Octokit;
   private owner: string;
@@ -37,7 +50,7 @@ class GitHubIntegration {
 
     try {
       const content = fs.readFileSync(this.resultsPath, "utf-8");
-      return JSON.parse(content);
+      return JSON.parse(content) as PerformanceResults;
     } catch (error) {
       console.error("Failed to load results:", error);
       return null;
@@ -53,65 +66,20 @@ class GitHubIntegration {
     }
 
     const comment = this.generateComment(results);
-    const runId = Date.now();
 
-    await this.octokit.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: prNumber,
-      body: comment,
-    });
+    try {
+      const result = await this.octokit.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: prNumber,
+        body: comment,
+      });
 
-    console.log(`Posted performance comment to PR #${prNumber}`);
-  }
-
-  async setStatus(sha: string): Promise<void> {
-    const results = this.loadResults();
-
-    if (!results) {
-      console.log("No performance results found. Skipping status check.");
-      return;
+      console.log(`Posted performance comment to PR #${prNumber}`);
+      console.log(`  Comment URL: ${result.data.html_url}`);
+    } catch (error: unknown) {
+      console.error("Failed to post comment:", error);
     }
-
-    const hasFailures = this.hasFailures(results);
-    const hasWarnings = this.hasWarnings(results);
-
-    let state: "success" | "failure" | "pending" = "success";
-    let description = "All performance checks passed";
-
-    if (hasFailures) {
-      state = "failure";
-      description = "Performance thresholds exceeded";
-    } else if (hasWarnings) {
-      state = "success";
-      description = "Performance checks passed with warnings";
-    }
-
-    await this.octokit.rest.repos.createCommitStatus({
-      owner: this.owner,
-      repo: this.repo,
-      sha: sha,
-      state,
-      description,
-      context: "performance-enforcer",
-    });
-
-    console.log(`Set status check: ${state} - ${description}`);
-  }
-
-  async findExistingComment(prNumber: number): Promise<number | null> {
-    const { data: comments } = await this.octokit.rest.issues.listComments({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: prNumber,
-    });
-
-    const botComment = comments.find(comment =>
-      comment.user?.type === "Bot" &&
-      comment.body?.includes("## Performance Results")
-    );
-
-    return botComment?.id || null;
   }
 
   async updateComment(prNumber: number): Promise<void> {
@@ -130,14 +98,77 @@ class GitHubIntegration {
 
     const comment = this.generateComment(results);
 
-    await this.octokit.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body: comment,
-    });
+    try {
+      await this.octokit.rest.issues.updateComment({
+        owner: this.owner,
+        repo: this.repo,
+        comment_id: commentId,
+        body: comment,
+      });
 
-    console.log(`Updated performance comment on PR #${prNumber}`);
+      console.log(`Updated performance comment on PR #${prNumber}`);
+    } catch (error: unknown) {
+      console.error("Failed to update comment:", error);
+    }
+  }
+
+  async setStatus(sha: string): Promise<void> {
+    const results = this.loadResults();
+
+    if (!results) {
+      console.log("No performance results found. Skipping status check.");
+      return;
+    }
+
+    const hasFailures = this.hasFailures(results);
+    const hasWarnings = this.hasWarnings(results);
+
+    let state: "success" | "failure" | "error" = "success";
+    let description = "All performance checks passed";
+
+    if (hasFailures) {
+      state = "failure";
+      description = "Performance thresholds exceeded";
+    } else if (hasWarnings) {
+      state = "success";
+      description = "Performance checks passed with warnings";
+    }
+
+    try {
+      await this.octokit.rest.repos.createCommitStatus({
+        owner: this.owner,
+        repo: this.repo,
+        sha: sha,
+        state,
+        description,
+        context: "performance-enforcer",
+      });
+
+      console.log(`Set status check: ${state} - ${description}`);
+    } catch (error: unknown) {
+      console.error("Failed to set status check:", error);
+    }
+  }
+
+  async findExistingComment(prNumber: number): Promise<number | null> {
+    try {
+      const { data: comments } = await this.octokit.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: prNumber,
+        per_page: 100,
+      });
+
+      const botComment = comments.find((comment: GitHubCommentResult) =>
+        comment.user?.type === "Bot" &&
+        comment.body?.includes("## Performance Results")
+      );
+
+      return botComment?.id || null;
+    } catch (error: unknown) {
+      console.error("Failed to find existing comment:", error);
+      return null;
+    }
   }
 
   private generateComment(results: PerformanceResults): string {
@@ -262,8 +293,8 @@ async function main() {
 
       await integration.setStatus(sha);
     }
-  } catch (error: any) {
-    console.error("Failed to execute command:", error.message);
+  } catch (error: unknown) {
+    console.error("Failed to execute command:", error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

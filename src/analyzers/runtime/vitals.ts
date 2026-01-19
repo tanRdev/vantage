@@ -1,6 +1,5 @@
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from "web-vitals";
-
-declare const window: any;
+import type { WindowWithWebVitals, Metric } from "../types/window.js";
 
 export interface WebVitalsData {
   lcp?: number;
@@ -24,42 +23,44 @@ export class WebVitalsCollector {
   constructor(config: WebVitalsConfig = {}) {
     this.data = {
       timestamp: Date.now(),
-      url: typeof (globalThis as any).window !== "undefined" ? (globalThis as any).window.location.href : "",
+      url: typeof window !== "undefined" ? window.location.href : "",
     };
     this.config = config;
   }
 
   collect(): void {
-    if (typeof (globalThis as any).window === "undefined") {
+    const win = window as WindowWithWebVitals;
+
+    if (typeof window === "undefined") {
       console.log("⚠️  Web Vitals collection requires browser environment");
       return;
     }
 
-    (globalThis as any).onLCP((metric: any) => {
+    onLCP((metric: Metric) => {
       this.data.lcp = metric.value;
       this.logMetric("LCP", metric.value, 2500);
       this.reportMetric("lcp", metric.value);
     });
 
-    (globalThis as any).onINP((metric: any) => {
+    onINP((metric: Metric) => {
       this.data.inp = metric.value;
       this.logMetric("INP", metric.value, 200);
       this.reportMetric("inp", metric.value);
     });
 
-    (globalThis as any).onCLS((metric: any) => {
+    onCLS((metric: Metric) => {
       this.data.cls = metric.value;
       this.logMetric("CLS", metric.value, 0.1);
       this.reportMetric("cls", metric.value);
     });
 
-    (globalThis as any).onFCP((metric: any) => {
+    onFCP((metric: Metric) => {
       this.data.fcp = metric.value;
       this.logMetric("FCP", metric.value, 1800);
       this.reportMetric("fcp", metric.value);
     });
 
-    (globalThis as any).onTTFB((metric: any) => {
+    onTTFB((metric: Metric) => {
       this.data.ttfb = metric.value;
       this.logMetric("TTFB", metric.value, 800);
       this.reportMetric("ttfb", metric.value);
@@ -89,15 +90,17 @@ export class WebVitalsCollector {
       url: this.data.url,
     };
 
-    fetch(this.config.reportUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }).catch((error) => {
-      console.error(`Failed to report ${name}:`, error);
-    });
+    if (typeof window !== "undefined") {
+      window.fetch(this.config.reportUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }).catch((error: Error) => {
+        console.error(`Failed to report ${name}:`, error);
+      });
+    }
   }
 
   static generateInstrumentationCode(config: WebVitalsConfig = {}): string {

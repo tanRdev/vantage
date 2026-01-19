@@ -1,4 +1,4 @@
-import type { Chunk, ModuleInfo } from "./nextjs.js";
+import type { TreemapNode } from "./treemap.js";
 
 export interface BundleAnalysis {
   totalSize: number;
@@ -20,6 +20,23 @@ export interface BundleDiff {
     sizeDelta: number;
   }>;
   totalSizeChange: number;
+}
+
+export interface Chunk {
+  id: string;
+  name: string;
+  size: number;
+  files: string[];
+  modules?: string[];
+}
+
+export interface ModuleInfo {
+  name: string;
+  size: number;
+  path: string;
+  dependencies: string[];
+  isDuplicate: boolean;
+  isDeadCode: boolean;
 }
 
 export class BundleAnalyzer {
@@ -86,11 +103,11 @@ export class BundleAnalyzer {
     };
   }
 
-  generateTreemapData(chunks: Chunk[]): any {
+  generateTreemapData(chunks: Chunk[]): TreemapNode {
     const children = chunks.map(chunk => ({
       name: chunk.name,
       value: chunk.size,
-      children: chunk.files.map(file => ({
+      children: chunk.files.map((file) => ({
         name: file,
         value: 0,
       })),
@@ -98,9 +115,9 @@ export class BundleAnalyzer {
 
     return {
       name: "Bundle",
-      value: children.reduce((sum, c) => sum + c.value, 0),
+      value: children.reduce((sum: any, c) => sum + (c.value || 0), 0),
       children,
-    };
+    } as TreemapNode;
   }
 
   checkBudget(chunks: Chunk[], budgets: Array<{ path: string; max: string }>): Array<{
@@ -110,8 +127,9 @@ export class BundleAnalyzer {
     exceeds: boolean;
   }> {
     return budgets.map(budget => {
+      const regex = new RegExp(budget.path);
       const matchingChunks = chunks.filter(
-        chunk => chunk.name.match(budget.path)
+        chunk => chunk.name.match(regex)
       );
 
       if (matchingChunks.length === 0) {
@@ -199,7 +217,7 @@ export class BundleAnalyzer {
   private parseSize(sizeStr: string): number {
     const value = parseInt(sizeStr.replace(/[^\d]/g, ""));
 
-    if (sizeStr.endsWith("kb")) {
+    if (sizeStr.endsWith("kb") {
       return value * 1024;
     }
 

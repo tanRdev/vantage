@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { spawn } from "child_process";
 
 export interface LighthouseResult {
   url: string;
@@ -54,10 +54,10 @@ export class LighthouseRunner {
       console.log(`  Run ${i + 1}/${this.options.numberOfRuns}...`);
 
       try {
-        const result = this.runSingleLighthouse(url, i);
+        const result = await this.runSingleLighthouse(url, i);
         runResults.push(result);
       } catch (error) {
-        console.error(`    Run ${i + 1} failed:`, error);
+        console.error(`    Run ${i + 1} failed:`, error instanceof Error ? error.message : String(error));
       }
     }
 
@@ -65,16 +65,14 @@ export class LighthouseRunner {
       throw new Error(`All Lighthouse runs failed for ${url}`);
     }
 
-    return this.calculateMedian(runResults);
+    return this.calculateMedian(runResults, url);
   }
 
-  private runSingleLighthouse(url: string, runIndex: number): LighthouseRawResult {
-    const outputFile = this.getOutputPath(url, runIndex);
+  private async runSingleLighthouse(url: string, runIndex: number): Promise<LighthouseRawResult> {
     const throttling = this.getThrottlingConfig();
     const preset = this.getPresetConfig();
 
-    const command = [
-      "npx",
+    const args = [
       "@lhci/cli",
       "autorun",
       `--collect.url=${url}`,
@@ -83,20 +81,45 @@ export class LighthouseRunner {
       `--collect.settings.throttling=${throttling}`,
       `--collect.staticDistDir=.`,
       `--upload.target=temporary-public-storage`,
-    ].join(" ");
+    ];
 
-    const output = execSync(command, {
-      cwd: process.cwd(),
-      encoding: "utf-8",
-      stdio: "pipe",
-    });
-
-    const result = this.parseLighthouseOutput(output);
-
-    return result;
+    const output = await this.spawnCommand("npx", args);
+    return this.parseLighthouseOutput(output);
   }
 
-  private calculateMedian(results: LighthouseRawResult[]): LighthouseResult {
+  private spawnCommand(command: string, args: string[]): Promise<string> {
+    return new Promise((resolve, reject) => {
+      let stdout = "";
+      let stderr = "";
+
+      const child = spawn(command, args, {
+        cwd: process.cwd(),
+        shell: true,
+      });
+
+      child.stdout?.on("data", (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr?.on("data", (data) => {
+        stderr += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve(stdout);
+        } else {
+          reject(new Error(`Command failed with code ${code}: ${stderr}`));
+        }
+      });
+
+      child.on("error", (error) => {
+        reject(new Error(`Failed to spawn command: ${error.message}`));
+      });
+    });
+  }
+
+  private calculateMedian(results: LighthouseRawResult[], url: string): LighthouseResult {
     const scores = this.extractMetricValues(results, "performanceScore").map(Number).sort((a, b) => a - b);
     const lcps = this.extractMetricValues(results, "lcp").map(Number).sort((a, b) => a - b);
     const inps = this.extractMetricValues(results, "inp").map(Number).sort((a, b) => a - b);
@@ -107,7 +130,7 @@ export class LighthouseRunner {
     const medianIndex = Math.floor(results.length / 2);
 
     return {
-      url: "",
+      url,
       score: scores[medianIndex] || 0,
       lcp: lcps[medianIndex] || 0,
       inp: inps[medianIndex] || 0,

@@ -23,6 +23,7 @@ export interface LighthouseConfig {
 }
 
 export interface RuntimeConfig {
+  baseUrl?: string;
   routes: string[];
   exclude?: string[];
   thresholds: RuntimeThresholds;
@@ -67,6 +68,7 @@ const LighthouseConfigSchema = z.object({
 });
 
 const RuntimeConfigSchema = z.object({
+  baseUrl: z.string().default("http://localhost:3000").optional(),
   routes: z.array(z.string()).min(1),
   exclude: z.array(z.string()).optional(),
   thresholds: RuntimeThresholdsSchema,

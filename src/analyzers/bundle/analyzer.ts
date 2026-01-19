@@ -157,38 +157,41 @@ export class BundleAnalyzer {
   }
 
   private findDuplicateModules(modules: ModuleInfo[]): ModuleInfo[] {
-    const nameCount = new Map<string, number>();
+    const duplicateNames = new Set<string>();
 
     for (const module of modules) {
-      const count = nameCount.get(module.name) || 0;
-      nameCount.set(module.name, count + 1);
+      if (duplicateNames.has(module.name)) continue;
+      const count = modules.filter(m => m.name === module.name).length;
+      if (count > 1) duplicateNames.add(module.name);
     }
 
     return modules
-      .filter(module => (nameCount.get(module.name) || 0) > 1)
+      .filter(module => duplicateNames.has(module.name))
       .map(module => ({ ...module, isDuplicate: true }));
   }
 
   private findDeadCode(modules: ModuleInfo[], chunks: Chunk[]): ModuleInfo[] {
-    const allReferencedModules = new Set<string>();
+    const entryChunkNames = new Set(
+      chunks
+        .filter(c => c.name.includes("pages/") || c.name.includes("main") || c.name.startsWith("_"))
+        .flatMap(c => c.modules || [])
+    );
 
-    for (const chunk of chunks) {
-      if (chunk.modules) {
-        for (const moduleName of chunk.modules) {
-          allReferencedModules.add(moduleName);
-        }
-      }
+    const modulesInNonEntryChunks = modules.filter(
+      m => !entryChunkNames.has(m.name)
+    );
+
+    const modulesInMultipleChunks = new Set<string>();
+    for (const module of modules) {
+      const occurrences = modules.filter(m => m.name === module.name).length;
+      if (occurrences > 1) modulesInMultipleChunks.add(module.name);
     }
 
-    return modules
-      .filter(module => !allReferencedModules.has(module.name))
-      .map(module => ({ ...module, isDeadCode: true }));
+    return modulesInNonEntryChunks.filter(module => !modulesInMultipleChunks.has(module.name));
   }
 
   private parseSize(sizeStr: string): number {
-    if (!sizeStr || typeof sizeStr !== "string") {
-      return 0;
-    }
+    if (!sizeStr) return 0;
 
     const match = sizeStr.match(/^(\d+(?:\.\d+)?)\s*(kb|mb|gb)?$/i);
     if (!match) {

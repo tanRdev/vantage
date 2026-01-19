@@ -58,10 +58,6 @@ export class RouteDetector {
       } else if (item.name === "page.tsx" || item.name === "page.ts" || item.name === "page.js") {
         const routeInfo = this.parseAppRoute(currentPath);
         routes.push(routeInfo);
-      } else if (item.name === "layout.tsx" || item.name === "layout.ts" || item.name === "layout.js") {
-        const routeInfo = this.parseAppRoute(currentPath);
-        routeInfo.type = "app";
-        routes.push(routeInfo);
       }
     }
   }
@@ -85,8 +81,8 @@ export class RouteDetector {
   }
 
   private getRouteType(currentPath: string): RouteInfo["type"] {
-    if (currentPath.includes("api")) return "api";
-    if (currentPath.includes("middleware")) return "middleware";
+    if (currentPath.startsWith("/api/") || currentPath.startsWith("api/")) return "api";
+    if (currentPath.startsWith("/middleware/") || currentPath.startsWith("middleware/")) return "middleware";
     return "app";
   }
 
@@ -119,7 +115,10 @@ export class RouteDetector {
         }
 
         this.scanPagesDirectory(path.join(dir, item.name), newPath, routes, excludePatterns);
-      } else if (item.name.endsWith(".tsx") || item.name.endsWith(".ts") || item.name.endsWith(".js") || item.name.endsWith(".jsx")) {
+      } else if (
+        (item.name.endsWith(".tsx") || item.name.endsWith(".ts") || item.name.endsWith(".js") || item.name.endsWith(".jsx")) &&
+        !item.name.startsWith("_")
+      ) {
         const routeInfo = this.parsePagesRoute(currentPath, item.name);
         routes.push(routeInfo);
       }
@@ -156,8 +155,8 @@ export class RouteDetector {
 
     formattedPath = formattedPath
       .replace(/\[([a-zA-Z0-9_]+)\]/g, ":$1")
-      .replace(/\.\.\.([a-zA-Z0-9_]+)\]/g, ":$1*")
-      .replace(/\/index/g, "/")
+      .replace(/\[\.\.\.([a-zA-Z0-9_]+)\]/g, ":$1*")
+      .replace(/\/index(\/|$)/g, "/")
       .replace(/\/$/, "/");
 
     if (formattedPath === "/") {

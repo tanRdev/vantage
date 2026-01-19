@@ -115,7 +115,7 @@ export class BundleAnalyzer {
 
     return {
       name: "Bundle",
-      value: children.reduce((sum: any, c) => sum + (c.value || 0), 0),
+      value: children.reduce((sum: number, c) => sum + (c.value || 0), 0),
       children,
     } as TreemapNode;
   }
@@ -127,7 +127,19 @@ export class BundleAnalyzer {
     exceeds: boolean;
   }> {
     return budgets.map(budget => {
-      const regex = new RegExp(budget.path);
+      let regex: RegExp;
+      try {
+        regex = new RegExp(budget.path);
+      } catch (error) {
+        console.error(`Invalid regex pattern in budget: ${budget.path}`);
+        return {
+          path: budget.path,
+          currentSize: 0,
+          maxSize: this.parseSize(budget.max),
+          exceeds: false,
+        };
+      }
+
       const matchingChunks = chunks.filter(
         chunk => chunk.name.match(regex)
       );
@@ -172,7 +184,7 @@ export class BundleAnalyzer {
         for (const moduleName of chunk.modules) {
           modules.push({
             name: moduleName,
-            size: Math.round(chunk.size / (chunk.modules.length || 1)),
+            size: Math.round(chunk.size / chunk.modules.length),
             path: chunk.name,
             dependencies: [],
             isDuplicate: false,
@@ -199,32 +211,44 @@ export class BundleAnalyzer {
   }
 
   private findDeadCode(modules: ModuleInfo[], chunks: Chunk[]): ModuleInfo[] {
-    const referencedModules = new Set<string>();
+    const allReferencedModules = new Set<string>();
 
     for (const chunk of chunks) {
       if (chunk.modules) {
         for (const moduleName of chunk.modules) {
-          referencedModules.add(moduleName);
+          allReferencedModules.add(moduleName);
         }
       }
     }
 
     return modules
-      .filter(module => !referencedModules.has(module.name))
+      .filter(module => !allReferencedModules.has(module.name))
       .map(module => ({ ...module, isDeadCode: true }));
   }
 
   private parseSize(sizeStr: string): number {
-    const value = parseInt(sizeStr.replace(/[^\d]/g, ""));
-
-    if (sizeStr.endsWith("kb") {
-      return value * 1024;
+    if (!sizeStr || typeof sizeStr !== "string") {
+      return 0;
     }
 
-    if (sizeStr.endsWith("mb")) {
-      return value * 1024 * 1024;
+    const match = sizeStr.match(/^(\d+(?:\.\d+)?)\s*(kb|mb|gb)?$/i);
+    if (!match) {
+      console.warn(`Invalid size format: ${sizeStr}`);
+      return 0;
     }
 
-    return value;
+    const value = parseFloat(match[1]);
+    if (isNaN(value)) return 0;
+
+    const unit = (match[2] || "b").toLowerCase();
+    const multipliers: Record<string, number> = {
+      b: 1,
+      kb: 1024,
+      mb: 1024 * 1024,
+      gb: 1024 * 1024 * 1024,
+    };
+
+    const result = value * multipliers[unit];
+    return Math.round(result);
   }
 }

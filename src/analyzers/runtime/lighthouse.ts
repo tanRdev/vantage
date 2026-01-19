@@ -13,6 +13,7 @@ export interface LighthouseResult {
 
 export interface LighthouseRawResult {
   lcp?: string;
+  inp?: string;
   cls?: string;
   tbt?: string;
   fcp?: string;
@@ -84,13 +85,13 @@ export class LighthouseRunner {
       `--upload.target=temporary-public-storage`,
     ].join(" ");
 
-    execSync(command, {
+    const output = execSync(command, {
       cwd: process.cwd(),
       encoding: "utf-8",
       stdio: "pipe",
     });
 
-    const result = this.parseLighthouseOutput(command);
+    const result = this.parseLighthouseOutput(output);
 
     return result;
   }
@@ -98,6 +99,7 @@ export class LighthouseRunner {
   private calculateMedian(results: LighthouseRawResult[]): LighthouseResult {
     const scores = this.extractMetricValues(results, "performanceScore").map(Number).sort((a, b) => a - b);
     const lcps = this.extractMetricValues(results, "lcp").map(Number).sort((a, b) => a - b);
+    const inps = this.extractMetricValues(results, "inp").map(Number).sort((a, b) => a - b);
     const clsValues = this.extractMetricValues(results, "cls").map(Number).sort((a, b) => a - b);
     const tbts = this.extractMetricValues(results, "tbt").map(Number).sort((a, b) => a - b);
     const fcps = this.extractMetricValues(results, "fcp").map(Number).sort((a, b) => a - b);
@@ -105,27 +107,28 @@ export class LighthouseRunner {
     const medianIndex = Math.floor(results.length / 2);
 
     return {
-      url: results[0].url,
-      score: scores[medianIndex],
-      lcp: lcps[medianIndex],
-      cls: clsValues[medianIndex],
-      tbt: tbts[medianIndex],
-      fcp: fcps[medianIndex],
-      inp: 0,
+      url: "",
+      score: scores[medianIndex] || 0,
+      lcp: lcps[medianIndex] || 0,
+      inp: inps[medianIndex] || 0,
+      cls: clsValues[medianIndex] || 0,
+      tbt: tbts[medianIndex] || 0,
+      fcp: fcps[medianIndex] || 0,
       runs: results.length,
     };
   }
 
   private parseLighthouseOutput(commandOutput: string): LighthouseRawResult {
     const lcpMatch = commandOutput.match(/Largest Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
+    const inpMatch = commandOutput.match(/Interaction to Next Paint:\s*(\d+\.?\d*)\s*ms/);
     const clsMatch = commandOutput.match(/Cumulative Layout Shift:\s*(\d+\.?\d*)/);
     const tbtMatch = commandOutput.match(/Total Blocking Time:\s*(\d+\.?\d*)\s*ms/);
     const fcpMatch = commandOutput.match(/First Contentful Paint:\s*(\d+\.?\d*)\s*ms/);
     const scoreMatch = commandOutput.match(/Performance score:\s*(\d+)/);
 
     return {
-      url: "",
       lcp: lcpMatch ? lcpMatch[1] : undefined,
+      inp: inpMatch ? inpMatch[1] : undefined,
       cls: clsMatch ? clsMatch[1] : undefined,
       tbt: tbtMatch ? tbtMatch[1] : undefined,
       fcp: fcpMatch ? fcpMatch[1] : undefined,

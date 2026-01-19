@@ -45,14 +45,20 @@ export class NextjsParser {
       return null;
     }
 
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    let packageJson: any;
+    try {
+      packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    } catch (error) {
+      console.error(`Failed to parse package.json: ${packageJsonPath}`);
+      return null;
+    }
     const nextDeps = packageJson.dependencies?.next || packageJson.devDependencies?.next;
 
     if (!nextDeps) {
       return null;
     }
 
-    const version = nextDeps.replace(/^[\^~]/, "");
+    const version = nextDeps.replace(/^[\^~>=<]/, "");
 
     return {
       version,
@@ -141,7 +147,7 @@ export class NextjsParser {
       const files = fs.readdirSync(outputDir, { withFileTypes: true });
 
       for (const file of files) {
-        if (file.name.endsWith(".js") && !file.name.startsWith("pages-manifest")) {
+        if ((file.name.endsWith(".js") || file.name.endsWith(".mjs") || file.name.endsWith(".cjs")) && !file.name.startsWith("pages-manifest")) {
           const stats = fs.statSync(path.join(outputDir, file.name));
           chunks.push({
             id: file.name,

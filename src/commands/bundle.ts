@@ -92,7 +92,7 @@ export default class Bundle extends Command {
         const outputDir = path.join(process.cwd(), ".performance-enforcer");
         const treemapPath = path.join(outputDir, "treemap.html");
 
-        treemapGenerator.generateHTML(treemapData, treemapPath);
+        await treemapGenerator.generateHTML(treemapData, treemapPath);
 
         console.log(`✅ Treemap generated: ${treemapPath}`);
         console.log(`💡 Open in browser: file://${treemapPath}\n`);

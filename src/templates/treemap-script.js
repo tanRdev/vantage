@@ -1,75 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
-
-const SIZE_THRESHOLD_SMALL = 100 * 1024;
-const SIZE_THRESHOLD_MEDIUM = 500 * 1024;
-const SIZE_THRESHOLD_LARGE = 1024 * 1024;
-
-const BUNDLE_SIZE_WARNING_THRESHOLD = 500 * 1024;
-
-export interface TreemapNode {
-  name: string;
-  value: number;
-  children?: TreemapNode[];
-  type?: "bundle" | "chunk" | "module" | "file";
-  path?: string;
-  sizeFormatted?: string;
-  percentChange?: number;
-}
-
-export class TreemapGenerator {
-  private templatesDir: string;
-
-  constructor() {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    this.templatesDir = path.join(__dirname, "../../templates");
-  }
-
-  async generateHTML(data: TreemapNode, outputPath: string): Promise<void> {
-    const html = await this.buildHTML(data);
-
-    try {
-      fs.writeFileSync(outputPath, html, "utf-8");
-    } catch (error) {
-      throw new Error(`Failed to write treemap HTML to ${outputPath}: ${error}`);
-    }
-  }
-
-  private async buildHTML(data: TreemapNode): Promise<string> {
-    const templatePath = path.join(this.templatesDir, "treemap.html");
-    let html = fs.readFileSync(templatePath, "utf-8");
-
-    const scriptContent = this.buildScript(data);
-    const scriptPath = path.join(path.dirname(outputPath ""), "treemap-script.js");
-
-    html = html.replace(
-      '<script src="./treemap-script.js"></script>',
-      `<script>${scriptContent}</script>`
-    );
-
-    const stylesPath = path.join(this.templatesDir, "treemap-styles.css");
-    const styles = fs.readFileSync(stylesPath, "utf-8");
-
-    html = html.replace(
-      '<link rel="stylesheet" href="./treemap-styles.css">',
-      `<style>${styles}</style>`
-    );
-
-    return html;
-  }
-
-  private buildScript(data: TreemapNode): string {
-    const dataScript = `window.treemapData = ${JSON.stringify(data)};`;
-
-    return `
-${dataScript}
-
-// Size thresholds
-const SIZE_THRESHOLD_SMALL = ${SIZE_THRESHOLD_SMALL};
-const SIZE_THRESHOLD_MEDIUM = ${SIZE_THRESHOLD_MEDIUM};
-const SIZE_THRESHOLD_LARGE = ${SIZE_THRESHOLD_LARGE};
+// Size thresholds for color coding (in bytes)
+const SIZE_THRESHOLD_SMALL = 100 * 1024;   // 100KB
+const SIZE_THRESHOLD_MEDIUM = 500 * 1024;  // 500KB
+const SIZE_THRESHOLD_LARGE = 1024 * 1024;  // 1MB
 
 // Color constants
 const COLOR_SMALL = "#4CAF50";
@@ -140,9 +72,15 @@ function createTreemap(data) {
     });
 
   nodes.on("mouseover", function(event, d) {
-    tooltip.transition().duration(200).style("opacity", 1);
+    tooltip.transition()
+      .duration(200)
+      .style("opacity", 1);
 
-    const content = \`<strong>\${d.data.name}</strong><br/>Size: \${formatBytes(d.value)}\`;
+    const content = `
+      <strong>${d.data.name}</strong><br/>
+      Size: ${formatBytes(d.value)}
+    `;
+
     tooltip.html(content)
       .style("left", (event.pageX + 15) + "px")
       .style("top", (event.pageY - 28) + "px");
@@ -153,14 +91,15 @@ function createTreemap(data) {
       .style("top", (event.pageY - 28) + "px");
   })
   .on("mouseout", function() {
-    tooltip.transition().duration(200).style("opacity", 0);
+    tooltip.transition()
+      .duration(200)
+      .style("opacity", 0);
   });
 
-  return { container, tooltip };
+  return { container, tooltip, width, height };
 }
 
-function updateTreemap(data) {
-  d3.select(".tooltip").remove();
+function updateTreemap(data, container, tooltip) {
   const newWidth = window.innerWidth - 40;
   const newHeight = window.innerHeight - 40;
 
@@ -210,9 +149,15 @@ function updateTreemap(data) {
     });
 
   newNodes.on("mouseover", function(event, d) {
-    newTooltip.transition().duration(200).style("opacity", 1);
+    newTooltip.transition()
+      .duration(200)
+      .style("opacity", 1);
 
-    const content = \`<strong>\${d.data.name}</strong><br/>Size: \${formatBytes(d.value)}\`;
+    const content = `
+      <strong>${d.data.name}</strong><br/>
+      Size: ${formatBytes(d.value)}
+    `;
+
     newTooltip.html(content)
       .style("left", (event.pageX + 15) + "px")
       .style("top", (event.pageY - 28) + "px");
@@ -223,24 +168,22 @@ function updateTreemap(data) {
       .style("top", (event.pageY - 28) + "px");
   })
   .on("mouseout", function() {
-    newTooltip.transition().duration(200).style("opacity", 0);
+    newTooltip.transition()
+      .duration(200)
+      .style("opacity", 0);
   });
+
+  return newContainer;
 }
 
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initTreemap);
-} else {
-  initTreemap();
-}
+// Initialize when data is available
+window.addEventListener("load", () => {
+  if (window.treemapData) {
+    const { container, tooltip } = createTreemap(window.treemapData);
 
-function initTreemap() {
-  const { container } = createTreemap(window.treemapData);
-
-  window.addEventListener("resize", () => {
-    updateTreemap(window.treemapData);
-  });
-}
-    `.trim();
+    window.addEventListener("resize", () => {
+      d3.select(".tooltip").remove();
+      updateTreemap(window.treemapData);
+    });
   }
-}
+});

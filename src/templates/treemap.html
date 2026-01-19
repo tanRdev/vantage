@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bundle Treemap - Performance Enforcer</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="./treemap-styles.css">
+</head>
+<body>
+  <div class="legend">
+    <h3>Legend</h3>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #4CAF50;"></div>
+      <span>< 100KB</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #2196F3;"></div>
+      <span>100KB - 500KB</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #FF9800;"></div>
+      <span>500KB - 1MB</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #F44336;"></div>
+      <span>> 1MB</span>
+    </div>
+  </div>
+  <div id="treemap"></div>
+  <script src="./treemap-script.js"></script>
+</body>
+</html>

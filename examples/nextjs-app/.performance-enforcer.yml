@@ -1,0 +1,28 @@
+framework: nextjs
+
+bundle:
+  analysis: deep
+  outputDir: .next
+  treemap: true
+  budgets:
+    - path: "app/**/*.js"
+      max: 50kb
+  thresholds:
+    regression: 10
+    warning: 5
+
+runtime:
+  routes:
+    - /
+  exclude:
+    - "/api/**"
+    - "/_next/**"
+  thresholds:
+    lcp: 2500
+    inp: 200
+    cls: 0.1
+    tbt: 300
+  lighthouse:
+    numberOfRuns: 3
+    preset: desktop
+    throttling: fast-3g

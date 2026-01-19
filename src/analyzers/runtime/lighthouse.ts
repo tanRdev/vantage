@@ -1,15 +1,7 @@
 import { spawn } from "child_process";
+import type { LighthouseResult } from "../../types.js";
 
-export interface LighthouseResult {
-  url: string;
-  score: number;
-  lcp: number;
-  inp?: number;
-  cls: number;
-  tbt: number;
-  fcp: number;
-  runs: number;
-}
+export { LighthouseResult };
 
 export interface LighthouseRawResult {
   lcp?: string;

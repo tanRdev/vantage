@@ -4,6 +4,7 @@ import Reporter from "../core/reporter.js";
 import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { BundleAnalyzer } from "../analyzers/bundle/analyzer.js";
 import { TreemapGenerator } from "../analyzers/bundle/treemap.js";
+import { BUNDLE_SIZE_WARNING_THRESHOLD, OUTPUT_DIR } from "../core/constants.js";
 
 export default class Bundle extends Command {
   static description = "Analyze bundle size and composition";
@@ -78,8 +79,8 @@ export default class Bundle extends Command {
           console.log(`  - ${analysis.deadCodeModules} dead code modules found. Review and remove unused imports.`);
         }
 
-        if (analysis.totalSize > 500 * 1024) {
-          console.log(`  - Bundle size exceeds 500KB. Consider code splitting and lazy loading.`);
+        if (analysis.totalSize > BUNDLE_SIZE_WARNING_THRESHOLD) {
+          console.log(`  - Bundle size exceeds ${BUNDLE_SIZE_WARNING_THRESHOLD / 1024}KB. Consider code splitting and lazy loading.`);
         }
       }
 
@@ -89,7 +90,7 @@ export default class Bundle extends Command {
         const treemapGenerator = new TreemapGenerator();
         const treemapData = analyzer.generateTreemapData(chunks);
 
-        const outputDir = path.join(process.cwd(), ".performance-enforcer");
+        const outputDir = path.join(process.cwd(), OUTPUT_DIR);
         const treemapPath = path.join(outputDir, "treemap.html");
 
         await treemapGenerator.generateHTML(treemapData, treemapPath);

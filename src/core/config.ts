@@ -2,6 +2,11 @@ import * as fs from "fs";
 import * as path from "path";
 import yaml from "yaml";
 import { z } from "zod";
+import {
+  DEFAULT_REGRESSION_THRESHOLD,
+  DEFAULT_WARNING_THRESHOLD,
+  CONFIG_FILE,
+} from "./constants.js";
 
 export interface BundleBudget {
   path: string;
@@ -81,8 +86,8 @@ const BundleConfigSchema = z.object({
   treemap: z.boolean().default(true),
   budgets: z.array(BundleBudgetSchema).default([]),
   thresholds: z.object({
-    regression: z.number().min(0).max(100).default(10),
-    warning: z.number().min(0).max(100).default(5),
+    regression: z.number().min(0).max(100).default(DEFAULT_REGRESSION_THRESHOLD),
+    warning: z.number().min(0).max(100).default(DEFAULT_WARNING_THRESHOLD),
   }),
   ignore: z.array(z.string()).default([]),
 });
@@ -101,14 +106,12 @@ const DEFAULT_CONFIG: PerformanceEnforcerConfig = {
     treemap: true,
     budgets: [],
     thresholds: {
-      regression: 10,
-      warning: 5,
+      regression: DEFAULT_REGRESSION_THRESHOLD,
+      warning: DEFAULT_WARNING_THRESHOLD,
     },
     ignore: [],
   },
 };
-
-const CONFIG_FILE = ".performance-enforcer.yml";
 
 export async function loadConfig(
   configPath: string = CONFIG_FILE

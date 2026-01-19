@@ -1,7 +1,7 @@
 import Reporter from "../core/reporter.js";
 import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { BundleAnalyzer } from "../analyzers/bundle/analyzer.js";
-import type { BundleConfig } from "../types.js";
+import type { BundleConfig } from "../core/config.js";
 
 export class BundleChecker {
   constructor(

@@ -1,8 +1,8 @@
 import Reporter from "../core/reporter.js";
 import { RouteDetector } from "../analyzers/runtime/routes.js";
-import { LighthouseRunner } from "../analyzers/runtime/lighthouse.js";
+import { LighthouseRunner, type LighthouseResult } from "../analyzers/runtime/lighthouse.js";
 import { ThresholdEngine } from "../core/threshold.js";
-import type { RuntimeConfig, LighthouseResult } from "../types.js";
+import type { RuntimeConfig } from "../core/config.js";
 import type { NextjsInfo } from "../analyzers/bundle/nextjs.js";
 import { PERFORMANCE_SCORE_PASS_THRESHOLD } from "../core/constants.js";
 

@@ -28,7 +28,7 @@ export class TreemapGenerator {
   }
 
   async generateHTML(data: TreemapNode, outputPath: string): Promise<void> {
-    const html = await this.buildHTML(data);
+    const html = await this.buildHTML(data, outputPath);
 
     try {
       fs.writeFileSync(outputPath, html, "utf-8");
@@ -37,13 +37,11 @@ export class TreemapGenerator {
     }
   }
 
-  private async buildHTML(data: TreemapNode): Promise<string> {
+  private async buildHTML(data: TreemapNode, outputPath: string): Promise<string> {
     const templatePath = path.join(this.templatesDir, "treemap.html");
     let html = fs.readFileSync(templatePath, "utf-8");
 
     const scriptContent = this.buildScript(data);
-    const scriptPath = path.join(path.dirname(outputPath ""), "treemap-script.js");
-
     html = html.replace(
       '<script src="./treemap-script.js"></script>',
       `<script>${scriptContent}</script>`

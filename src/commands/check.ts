@@ -1,10 +1,9 @@
 import { Command } from "@oclif/core";
 import Reporter from "../core/reporter.js";
-import { NextjsParser } from "../analyzers/bundle/nextjs.js";
+import { NextjsParser, type NextjsInfo } from "../analyzers/bundle/nextjs.js";
 import { RuntimeChecker } from "../services/RuntimeChecker.js";
 import { BundleChecker } from "../services/BundleChecker.js";
 import type { PerformanceEnforcerConfig } from "../core/config.js";
-import type { NextjsInfo } from "../types.js";
 
 export default class Check extends Command {
   static description = "Run all configured performance checks";

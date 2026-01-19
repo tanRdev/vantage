@@ -7,6 +7,7 @@ import {
   DEFAULT_WARNING_THRESHOLD,
   CONFIG_FILE,
 } from "./constants.js";
+import { ConfigError } from "./errors.js";
 
 export interface BundleBudget {
   path: string;
@@ -126,9 +127,9 @@ export async function loadConfig(
     return ConfigSchema.parse(parsed);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Config validation error: ${error.errors.map(e => e.message).join(", ")}`);
+      throw new ConfigError(`Config validation error: ${error.errors.map(e => e.message).join(", ")}`);
     }
-    throw new Error(`Failed to load config: ${error}`);
+    throw new ConfigError(`Failed to load config: ${error}`);
   }
 }
 

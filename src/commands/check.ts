@@ -132,7 +132,7 @@ export default class Check extends Command {
                 current: `${result.tbt.toFixed(0)}ms`,
                 previous: "-",
                 delta: "-",
-                status: tbtResult.status as any,
+                status: tbtResult.status,
               });
             }
 

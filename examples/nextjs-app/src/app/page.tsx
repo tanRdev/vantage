@@ -6,10 +6,10 @@ export default function Home() {
       <div className="container">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
-            Welcome to Performance Enforcer
+            Welcome to Vantage
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            A sample Next.js application configured with Performance Enforcer for
+            A sample Next.js application configured with Vantage for
             automatic performance monitoring and enforcement.
           </p>
 

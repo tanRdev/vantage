@@ -116,7 +116,7 @@ export class WebVitalsCollector {
 
   static generateInstrumentationCode(config: WebVitalsConfig = {}): string {
     return `
-// Performance Enforcer - Web Vitals Instrumentation
+// Vantage - Web Vitals Instrumentation
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 
 const reportMetric = (metric, name) => {

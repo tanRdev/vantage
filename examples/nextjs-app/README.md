@@ -1,6 +1,6 @@
-# Performance Enforcer - Example Next.js App
+# Vantage - Example Next.js App
 
-This is a sample Next.js application configured with Performance Enforcer.
+This is a sample Next.js application configured with Vantage.
 
 ## Setup
 

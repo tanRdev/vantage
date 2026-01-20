@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-01-19
 
 ### Added
-- Initial release of Performance Enforcer CLI
+- Initial release of Vantage CLI
 - Bundle size analysis with deep module-level breakdown
 - Runtime performance metrics via LHCI integration
 - Web Vitals tracking (LCP, INP, CLS, FCP, TTFB)

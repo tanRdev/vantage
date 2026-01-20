@@ -1,7 +1,7 @@
 {
   "name": "nextjs-app",
   "version": "1.0.0",
-  "description": "Sample Next.js application configured with Performance Enforcer",
+  "description": "Sample Next.js application configured with Vantage",
   "private": true,
   "scripts": {
     "dev": "next dev",

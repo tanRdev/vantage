@@ -48,7 +48,7 @@ export interface BundleConfig {
   ignore?: string[];
 }
 
-export interface PerformanceEnforcerConfig {
+export interface VantageConfig {
   framework: "nextjs" | "auto";
   bundle: BundleConfig;
   runtime?: RuntimeConfig;
@@ -99,7 +99,7 @@ const ConfigSchema = z.object({
   runtime: RuntimeConfigSchema.optional(),
 });
 
-const DEFAULT_CONFIG: PerformanceEnforcerConfig = {
+const DEFAULT_CONFIG: VantageConfig = {
   framework: "nextjs",
   bundle: {
     analysis: "deep",
@@ -116,7 +116,7 @@ const DEFAULT_CONFIG: PerformanceEnforcerConfig = {
 
 export async function loadConfig(
   configPath: string = CONFIG_FILE
-): Promise<PerformanceEnforcerConfig> {
+): Promise<VantageConfig> {
   if (!fs.existsSync(configPath)) {
     return DEFAULT_CONFIG;
   }
@@ -134,7 +134,7 @@ export async function loadConfig(
 }
 
 export async function saveConfig(
-  config: PerformanceEnforcerConfig,
+  config: VantageConfig,
   configPath: string = CONFIG_FILE
 ): Promise<void> {
   const configContent = yaml.stringify(config, {

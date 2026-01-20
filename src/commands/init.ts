@@ -52,7 +52,7 @@ export default class Init extends Command {
       },
     };
 
-    const yamlContent = `# Performance Enforcer Configuration
+    const yamlContent = `# Vantage Configuration
 framework: ${config.framework}
 
 # Bundle Analysis Configuration

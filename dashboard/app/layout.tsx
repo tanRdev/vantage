@@ -4,7 +4,7 @@ import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "Performance Enforcer",
+  title: "Vantage",
   description: "Performance monitoring dashboard",
 };
 

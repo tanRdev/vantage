@@ -1,6 +1,6 @@
-# Contributing to Performance Enforcer
+# Contributing to Vantage
 
-Thank you for your interest in contributing! This document provides guidelines for contributing to Performance Enforcer.
+Thank you for your interest in contributing! This document provides guidelines for contributing to Vantage.
 
 ## Development Setup
 

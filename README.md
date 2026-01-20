@@ -1,4 +1,4 @@
-## Performance Enforcer
+## Vantage
 
 > Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration
 
@@ -246,7 +246,7 @@ Follow instructions to deploy your dashboard to GitHub Pages.
 
 ## Examples
 
-See `examples/` directory for sample Next.js apps configured with Performance Enforcer.
+See `examples/` directory for sample Next.js apps configured with Vantage.
 
 ## Examples
 
@@ -288,5 +288,5 @@ Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
 
 ## License
 
-MIT © [Your Name]
+MIT © @tanRdev
 

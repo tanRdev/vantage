@@ -6,7 +6,7 @@ import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "Performance Enforcer Dashboard",
+  title: "Vantage Dashboard",
   description: "Performance metrics and bundle analysis for your Next.js application",
 };
 

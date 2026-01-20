@@ -3,12 +3,12 @@ export default function AboutPage() {
     <main className="min-h-screen py-12">
       <div className="container">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">About Performance Enforcer</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">About Vantage</h1>
 
           <section className="card mb-6">
-            <h2 className="text-xl font-semibold mb-3">What is Performance Enforcer?</h2>
+            <h2 className="text-xl font-semibold mb-3">What is Vantage?</h2>
             <p className="text-gray-600 mb-4">
-              Performance Enforcer is a CLI tool for Next.js applications that provides
+              Vantage is a CLI tool for Next.js applications that provides
               comprehensive performance monitoring and enforcement. It helps teams maintain
               performance standards by automatically checking bundle sizes and runtime metrics.
             </p>

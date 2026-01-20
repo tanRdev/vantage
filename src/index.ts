@@ -46,7 +46,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-    console.log("Performance Enforcer - Performance budget enforcement for Next.js apps\n");
+    console.log("Vantage - Performance budget enforcement for Next.js apps\n");
     console.log("\nUsage: vantage <command> [options]\n");
     console.log("\nCommands:");
     for (const cmd of commands) {

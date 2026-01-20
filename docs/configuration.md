@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Performance Enforcer uses YAML configuration files to define performance budgets and check settings.
+Vantage uses YAML configuration files to define performance budgets and check settings.
 
 ## Config File Location
 

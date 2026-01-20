@@ -1,4 +1,4 @@
-# Performance Enforcer - Implementation Plan
+# Vantage - Implementation Plan
 
 ## Project Decisions
 

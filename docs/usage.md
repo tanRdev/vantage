@@ -1,6 +1,6 @@
 # Usage Guide
 
-This guide covers common usage patterns for Performance Enforcer.
+This guide covers common usage patterns for Vantage.
 
 ## Installation
 
@@ -18,7 +18,7 @@ npx vantage <command>
 
 ### init
 
-Initialize Performance Enforcer in your project.
+Initialize Vantage in your project.
 
 ```bash
 vantage init

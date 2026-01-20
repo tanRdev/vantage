@@ -14,3 +14,5 @@ declare global {
     onTTFB?: (callback: (metric: Metric) => void) => void;
   }
 }
+
+export {};

@@ -1,43 +1,68 @@
 import { Command } from "@oclif/core";
 import Reporter from "../core/reporter.js";
-import { NextjsParser, type NextjsInfo } from "../analyzers/bundle/nextjs.js";
+import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { RuntimeChecker } from "../services/RuntimeChecker.js";
 import { BundleChecker } from "../services/BundleChecker.js";
-import type { PerformanceEnforcerConfig } from "../core/config.js";
 
 export default class Check extends Command {
   static description = "Run all configured performance checks";
   static id = "check";
+  static allowArbitraryFlags = false;
+  static strict = false;
 
   async run(): Promise<void> {
-    console.log("Running performance-enforcer checks...");
-    console.log("\n🔍 Loading configuration...");
+    Reporter.info("Running performance-enforcer checks...");
+    Reporter.info("Loading configuration...");
+
+    let hasFailures = false;
 
     try {
       const { loadConfig } = await import("../core/config.js");
       const config = await loadConfig();
 
-      console.log("✅ Configuration loaded");
-      console.log(`\nFramework: ${config.framework}`);
+      Reporter.info(`Configuration loaded. Framework: ${config.framework}`);
 
       const nextjsInfo = new NextjsParser(process.cwd()).detectNextjs();
 
       if (config.runtime && nextjsInfo) {
-        console.log(`\n📊 Running runtime metrics...`);
-        const runtimeChecker = new RuntimeChecker(process.cwd(), nextjsInfo, config.runtime);
-        await runtimeChecker.check();
+        Reporter.info("Running runtime metrics...");
+
+        try {
+          const runtimeChecker = new RuntimeChecker(process.cwd(), nextjsInfo, config.runtime);
+          await runtimeChecker.check();
+        } catch (error) {
+          if ((error as { code?: number }).code === 1) {
+            hasFailures = true;
+          } else {
+            throw error;
+          }
+        }
       } else if (config.runtime) {
         Reporter.warn("Could not detect Next.js project. Skipping runtime checks.");
       }
 
-      console.log("\n📦 Running bundle analysis...");
+      Reporter.info("Running bundle analysis...");
 
-      const bundleChecker = new BundleChecker(process.cwd(), config.bundle);
-      bundleChecker.check();
+      try {
+        const bundleChecker = new BundleChecker(process.cwd(), config.bundle);
+        bundleChecker.check();
+      } catch (error) {
+        if ((error as { code?: number }).code === 1) {
+          hasFailures = true;
+        } else {
+          throw error;
+        }
+      }
 
     } catch (error) {
       Reporter.error("Failed to run checks", error as Error);
       process.exit(1);
     }
+
+    if (hasFailures) {
+      process.exit(1);
+    }
+
+    Reporter.success("All checks completed!");
   }
 }

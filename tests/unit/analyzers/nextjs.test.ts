@@ -62,7 +62,8 @@ describe("NextjsParser", () => {
 
     it("should detect App router type", () => {
       vi.spyOn(fs, "existsSync").mockImplementation((path: string) => {
-        if (typeof path === "string" && path.includes("app")) return true;
+        if (typeof path === "string" && path.endsWith("package.json")) return true;
+        if (typeof path === "string" && path.endsWith("app")) return true;
         return false;
       });
       vi.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify({
@@ -76,8 +77,8 @@ describe("NextjsParser", () => {
 
     it("should detect Pages router type", () => {
       vi.spyOn(fs, "existsSync").mockImplementation((path: string) => {
-        if (typeof path === "string" && path.includes("pages")) return true;
-        if (typeof path === "string" && path.includes("app")) return false;
+        if (typeof path === "string" && path.endsWith("package.json")) return true;
+        if (typeof path === "string" && path.endsWith("pages")) return true;
         return false;
       });
       vi.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify({
@@ -128,8 +129,8 @@ describe("NextjsParser", () => {
         { name: "vendor.js", isFile: () => true },
         { name: "readme.md", isFile: () => true },
         { name: "pages-manifest.json", isFile: () => true },
-      ]);
-      vi.spyOn(fs, "statSync").mockReturnValue({ size: 1024 });
+      ] as any);
+      vi.spyOn(fs, "statSync").mockReturnValue({ size: 1024 } as any);
 
       const chunks = parser.getChunks("/test/output");
       expect(chunks.length).toBe(2);

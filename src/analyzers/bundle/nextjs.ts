@@ -1,11 +1,17 @@
 import * as fs from "fs";
 import * as path from "path";
+import Reporter from "../../core/reporter.js";
 
 export interface NextjsInfo {
   version: string;
   routerType: "app" | "pages";
   outputDir: string;
   hasTurbopack: boolean;
+}
+
+export interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
 }
 
 export interface BuildManifest {
@@ -45,11 +51,11 @@ export class NextjsParser {
       return null;
     }
 
-    let packageJson: any;
+    let packageJson: PackageJson;
     try {
       packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-    } catch (error) {
-      console.error(`Failed to parse package.json: ${packageJsonPath}`);
+    } catch {
+      Reporter.error(`Failed to parse package.json: ${packageJsonPath}`);
       return null;
     }
     const nextDeps = packageJson.dependencies?.next || packageJson.devDependencies?.next;
@@ -99,7 +105,7 @@ export class NextjsParser {
       const manifestContent = fs.readFileSync(manifestPath, "utf-8");
       return JSON.parse(manifestContent);
     } catch (error) {
-      console.error(`Failed to parse build-manifest.json:`, error);
+      Reporter.error(`Failed to parse build-manifest.json:`, error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -115,7 +121,7 @@ export class NextjsParser {
       const manifestContent = fs.readFileSync(manifestPath, "utf-8");
       return JSON.parse(manifestContent);
     } catch (error) {
-      console.error(`Failed to parse pages-manifest.json:`, error);
+      Reporter.error(`Failed to parse pages-manifest.json:`, error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -158,7 +164,7 @@ export class NextjsParser {
         }
       }
     } catch (error) {
-      console.error(`Failed to read chunks:`, error);
+      Reporter.error(`Failed to read chunks:`, error instanceof Error ? error : new Error(String(error)));
     }
 
     return chunks;

@@ -126,7 +126,8 @@ export class RouteDetector {
   }
 
   private parsePagesRoute(currentPath: string, fileName: string): RouteInfo {
-    const segments = [...currentPath.split(path.sep).filter(Boolean), fileName];
+    const baseName = fileName.replace(/\.(tsx?|jsx?|js)$/, "");
+    const segments = [...currentPath.split(path.sep).filter(Boolean), baseName];
     const isDynamic = segments.some(s => s.startsWith("[") && s.endsWith("]"));
     const parameterNames = segments
       .filter(s => s.startsWith("[") && s.endsWith("]"))

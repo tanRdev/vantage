@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Size thresholds for color coding (in bytes)
 const SIZE_THRESHOLD_SMALL = 100 * 1024;   // 100KB
 const SIZE_THRESHOLD_MEDIUM = 500 * 1024;  // 500KB
@@ -99,7 +100,7 @@ function createTreemap(data) {
   return { container, tooltip, width, height };
 }
 
-function updateTreemap(data, container, tooltip) {
+function updateTreemap(data) {
   const newWidth = window.innerWidth - 40;
   const newHeight = window.innerHeight - 40;
 
@@ -179,7 +180,7 @@ function updateTreemap(data, container, tooltip) {
 // Initialize when data is available
 window.addEventListener("load", () => {
   if (window.treemapData) {
-    const { container, tooltip } = createTreemap(window.treemapData);
+    createTreemap(window.treemapData);
 
     window.addEventListener("resize", () => {
       d3.select(".tooltip").remove();

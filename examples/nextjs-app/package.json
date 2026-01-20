@@ -1,15 +1,14 @@
 {
   "name": "nextjs-app",
   "version": "1.0.0",
-  "description": "This is a sample Next.js application configured with Performance Enforcer.",
-  "main": "index.js",
+  "description": "Sample Next.js application configured with Performance Enforcer",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "next": "^16.1.3",
     "react": "^19.2.3",

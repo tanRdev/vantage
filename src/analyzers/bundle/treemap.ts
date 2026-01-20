@@ -6,8 +6,6 @@ const SIZE_THRESHOLD_SMALL = 100 * 1024;
 const SIZE_THRESHOLD_MEDIUM = 500 * 1024;
 const SIZE_THRESHOLD_LARGE = 1024 * 1024;
 
-const BUNDLE_SIZE_WARNING_THRESHOLD = 500 * 1024;
-
 export interface TreemapNode {
   name: string;
   value: number;
@@ -37,7 +35,7 @@ export class TreemapGenerator {
     }
   }
 
-  private async buildHTML(data: TreemapNode, outputPath: string): Promise<string> {
+  private async buildHTML(data: TreemapNode, _outputPath: string): Promise<string> {
     const templatePath = path.join(this.templatesDir, "treemap.html");
     let html = fs.readFileSync(templatePath, "utf-8");
 

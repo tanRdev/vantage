@@ -14,7 +14,7 @@ export default class Dashboard extends Command {
     const port = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : 3000;
 
     if (deployFlag) {
-      console.log("🚀 Deploying dashboard to GitHub Pages...");
+      Reporter.info("Deploying dashboard to GitHub Pages...");
 
       try {
         const { spawn } = await import("child_process");
@@ -24,14 +24,20 @@ export default class Dashboard extends Command {
           stdio: "inherit",
         });
 
-        await new Promise((resolve) => build.on("close", resolve));
+        const exitCode = await new Promise<number>((resolve) => {
+          build.on("close", (code) => resolve(code ?? 1));
+        });
 
-        console.log("\n✅ Dashboard ready for deployment");
-        console.log("\nTo deploy to GitHub Pages:");
-        console.log("  1. git add .");
-        console.log("  2. git commit -m 'Update dashboard'");
-        console.log("  3. git push origin main");
-        console.log("\nThen enable GitHub Pages in repo settings");
+        if (exitCode !== 0) {
+          throw new Error(`Dashboard build failed with exit code ${exitCode}`);
+        }
+
+        Reporter.success("Dashboard ready for deployment");
+        Reporter.info("To deploy to GitHub Pages:");
+        Reporter.info("  1. git add .");
+        Reporter.info("  2. git commit -m 'Update dashboard'");
+        Reporter.info("  3. git push origin main");
+        Reporter.info("Then enable GitHub Pages in repo settings");
 
         process.exit(0);
       } catch (error) {
@@ -39,8 +45,8 @@ export default class Dashboard extends Command {
         process.exit(1);
       }
     } else {
-      console.log(`🎨 Starting dashboard on port ${port}...`);
-      console.log("\n📊 Opening dashboard at http://localhost:" + port + "\n");
+      Reporter.info(`Starting dashboard on port ${port}...`);
+      Reporter.info("Opening dashboard at http://localhost:" + port);
 
       try {
         const { spawn } = await import("child_process");
@@ -51,6 +57,12 @@ export default class Dashboard extends Command {
           process.exit(1);
         }
 
+        const packageJsonPath = path.join(dashboardPath, "package.json");
+        if (!fs.existsSync(packageJsonPath)) {
+          Reporter.error("Dashboard package.json not found. Is the dashboard properly set up?");
+          process.exit(1);
+        }
+
         const dev = spawn("npm", ["run", "dev"], {
           cwd: dashboardPath,
           stdio: "inherit",
@@ -58,10 +70,11 @@ export default class Dashboard extends Command {
 
         dev.on("error", (error: Error) => {
           Reporter.error("Failed to start dashboard", error);
+          process.exit(1);
         });
 
         process.on("SIGINT", () => {
-          console.log("\n\n🛑 Stopping dashboard...");
+          Reporter.info("Stopping dashboard...");
           dev.kill();
           process.exit(0);
         });

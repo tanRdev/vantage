@@ -1,12 +1,7 @@
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from "web-vitals";
+import type { Metric } from "../../types/window.js";
 import "../types/window";
-
-export interface Metric {
-  name: string;
-  value: number;
-  rating: "good" | "needs-improvement" | "poor";
-  delta?: number;
-}
+import Reporter from "../../core/reporter.js";
 
 export interface WebVitalsData {
   lcp?: number;
@@ -21,6 +16,7 @@ export interface WebVitalsData {
 export interface WebVitalsConfig {
   reportUrl?: string;
   reportThreshold?: number;
+  debug?: boolean;
 }
 
 export class WebVitalsCollector {
@@ -37,37 +33,47 @@ export class WebVitalsCollector {
 
   collect(): void {
     if (typeof window === "undefined") {
-      console.log("⚠️  Web Vitals collection requires browser environment");
+      Reporter.warn("Web Vitals collection requires browser environment");
       return;
     }
 
     onLCP((metric: Metric) => {
       this.data.lcp = metric.value;
-      this.logMetric("LCP", metric.value, 2500);
+      if (this.config.debug) {
+        this.logMetric("LCP", metric.value, 2500);
+      }
       this.reportMetric("lcp", metric.value);
     });
 
     onINP((metric: Metric) => {
       this.data.inp = metric.value;
-      this.logMetric("INP", metric.value, 200);
+      if (this.config.debug) {
+        this.logMetric("INP", metric.value, 200);
+      }
       this.reportMetric("inp", metric.value);
     });
 
     onCLS((metric: Metric) => {
       this.data.cls = metric.value;
-      this.logMetric("CLS", metric.value, 0.1);
+      if (this.config.debug) {
+        this.logMetric("CLS", metric.value, 0.1);
+      }
       this.reportMetric("cls", metric.value);
     });
 
     onFCP((metric: Metric) => {
       this.data.fcp = metric.value;
-      this.logMetric("FCP", metric.value, 1800);
+      if (this.config.debug) {
+        this.logMetric("FCP", metric.value, 1800);
+      }
       this.reportMetric("fcp", metric.value);
     });
 
     onTTFB((metric: Metric) => {
       this.data.ttfb = metric.value;
-      this.logMetric("TTFB", metric.value, 800);
+      if (this.config.debug) {
+        this.logMetric("TTFB", metric.value, 800);
+      }
       this.reportMetric("ttfb", metric.value);
     });
   }
@@ -77,10 +83,9 @@ export class WebVitalsCollector {
   }
 
   private logMetric(name: string, value: number, threshold: number): void {
-    const status = value <= threshold ? "✅" : "❌";
+    const status = value <= threshold ? "PASS" : "FAIL";
     const unit = name === "CLS" ? "" : "ms";
-
-    console.log(`  ${status} ${name}: ${value.toFixed(2)}${unit} (threshold: ${threshold}${unit})`);
+    Reporter.info(`${status} ${name}: ${value.toFixed(2)}${unit} (threshold: ${threshold}${unit})`);
   }
 
   private reportMetric(name: string, value: number): void {
@@ -102,8 +107,9 @@ export class WebVitalsCollector {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
+        keepalive: true,
       }).catch((error: Error) => {
-        console.error(`Failed to report ${name}:`, error);
+        Reporter.error(`Failed to report ${name}`, error);
       });
     }
   }
@@ -113,50 +119,30 @@ export class WebVitalsCollector {
 // Performance Enforcer - Web Vitals Instrumentation
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 
-onCLS((metric) => {
-  console.log('CLS:', metric.value);
+const reportMetric = (metric, name) => {
   ${config.reportUrl ? `
   fetch('${config.reportUrl}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      metric: 'cls',
+      metric: name,
       value: metric.value,
       timestamp: Date.now(),
       url: window.location.href
-    })
-  });` : ''}
-});
+    }),
+    keepalive: true
+  }).catch(err => console.error('Failed to report metric:', err));
+  ` : `
+  // TODO: Send metric to your analytics endpoint
+  console.log(\`\${name}:\`, metric.value);
+  `}
+};
 
-onLCP((metric) => {
-  console.log('LCP:', metric.value);
-  ${config.reportUrl ? `
-  fetch('${config.reportUrl}', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      metric: 'lcp',
-      value: metric.value,
-      timestamp: Date.now(),
-      url: window.location.href
-    })
-  });` : ''}
-});
-
-onINP((metric) => {
-  console.log('INP:', metric.value);
-  ${config.reportUrl ? `
-  fetch('${config.reportUrl}', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      metric: 'inp',
-      value: metric.value,
-      timestamp: Date.now(),
-      url: window.location.href
-    })
-  });` : ''}
-});
+onCLS((metric) => reportMetric(metric, 'cls'));
+onLCP((metric) => reportMetric(metric, 'lcp'));
+onINP((metric) => reportMetric(metric, 'inp'));
+onFCP((metric) => reportMetric(metric, 'fcp'));
+onTTFB((metric) => reportMetric(metric, 'ttfb'));
 `;
   }
 }

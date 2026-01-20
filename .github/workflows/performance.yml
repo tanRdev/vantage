@@ -35,7 +35,7 @@ jobs:
       - name: Post results to PR
         if: github.event_name == 'pull_request'
         run: |
-          node dist/integrations/github.js post-comment
+          npx performance-enforcer github --post-comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -44,7 +44,7 @@ jobs:
       - name: Set status check
         if: github.event_name == 'pull_request'
         run: |
-          node dist/integrations/github.js set-status
+          npx performance-enforcer github --set-status
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

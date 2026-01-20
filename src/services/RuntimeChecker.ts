@@ -22,7 +22,7 @@ export class RuntimeChecker {
   ) {}
 
   async check(): Promise<void> {
-    console.log(`\n🔍 Detecting routes...`);
+    Reporter.info("Detecting routes...");
 
     const routeDetector = new RouteDetector(this.workingDir, this.nextjsInfo.routerType);
     const allRoutes = routeDetector.detectRoutes(this.config.exclude || []);
@@ -33,14 +33,14 @@ export class RuntimeChecker {
       ["api", "middleware"]
     );
 
-    console.log(`\n📋 Found ${allRoutes.length} routes`);
-    console.log(`\n🎯 Testing ${routesToTest.length} routes:\n`);
+    Reporter.info(`Found ${allRoutes.length} routes`);
+    Reporter.info(`Testing ${routesToTest.length} routes:`);
 
     for (const route of routesToTest) {
-      console.log(`  - ${route.path}`);
+      Reporter.info(`  - ${route.path}`);
     }
 
-    console.log(`\n🚀 Running Lighthouse...`);
+    Reporter.info("Running Lighthouse...");
 
     const lighthouseRunner = new LighthouseRunner({
       urls: routesToTest.map(r => `http://localhost:3000${r.path}`),
@@ -62,7 +62,9 @@ export class RuntimeChecker {
 
     if (shouldBlock) {
       Reporter.error("Performance thresholds exceeded!");
-      process.exit(1);
+      const error = new Error("Performance thresholds exceeded") as Error & { code: number };
+      error.code = 1;
+      throw error;
     }
 
     Reporter.success("All runtime checks passed!");

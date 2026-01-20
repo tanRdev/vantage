@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import Reporter from "../../core/reporter.js";
 
 export interface LighthouseResult {
   url: string;
@@ -39,9 +40,15 @@ export class LighthouseRunner {
     const results: LighthouseResult[] = [];
 
     for (const url of this.options.urls) {
-      console.log(`\n🔍 Running Lighthouse on ${url}...`);
-      const result = await this.runLighthouse(url);
-      results.push(result);
+      Reporter.info(`Running Lighthouse on ${url}...`);
+
+      try {
+        const result = await this.runLighthouse(url);
+        results.push(result);
+      } catch (error) {
+        Reporter.error(`Lighthouse failed for ${url}`, error instanceof Error ? error : new Error(String(error)));
+        throw error;
+      }
     }
 
     return results;
@@ -51,13 +58,16 @@ export class LighthouseRunner {
     const runResults: LighthouseRawResult[] = [];
 
     for (let i = 0; i < this.options.numberOfRuns; i++) {
-      console.log(`  Run ${i + 1}/${this.options.numberOfRuns}...`);
+      Reporter.info(`  Run ${i + 1}/${this.options.numberOfRuns}...`);
 
       try {
         const result = await this.runSingleLighthouse(url, i);
         runResults.push(result);
       } catch (error) {
-        console.error(`    Run ${i + 1} failed:`, error instanceof Error ? error.message : String(error));
+        Reporter.error(`    Run ${i + 1} failed`, error instanceof Error ? error : new Error(String(error)));
+        if (runResults.length === 0) {
+          throw error;
+        }
       }
     }
 
@@ -68,7 +78,7 @@ export class LighthouseRunner {
     return this.calculateMedian(runResults, url);
   }
 
-  private async runSingleLighthouse(url: string, runIndex: number): Promise<LighthouseRawResult> {
+  private async runSingleLighthouse(url: string, _runIndex: number): Promise<LighthouseRawResult> {
     const throttling = this.getThrottlingConfig();
     const preset = this.getPresetConfig();
 
@@ -95,6 +105,7 @@ export class LighthouseRunner {
       const child = spawn(command, args, {
         cwd: process.cwd(),
         shell: true,
+        timeout: 120000,
       });
 
       child.stdout?.on("data", (data) => {
@@ -109,7 +120,7 @@ export class LighthouseRunner {
         if (code === 0) {
           resolve(stdout);
         } else {
-          reject(new Error(`Command failed with code ${code}: ${stderr}`));
+          reject(new Error(`Command failed with code ${code}: ${stderr || stdout}`));
         }
       });
 

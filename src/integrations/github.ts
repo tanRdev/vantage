@@ -1,6 +1,22 @@
 import { Octokit } from "octokit";
 import * as fs from "fs";
 import { formatMs, formatBytes } from "../utils/formatters.js";
+import Reporter from "../core/reporter.js";
+
+function validateGitHubToken(token: string): void {
+  if (!token || typeof token !== "string") {
+    throw new Error("GITHUB_TOKEN must be a non-empty string");
+  }
+
+  const trimmedToken = token.trim();
+  if (trimmedToken.length < 36) {
+    throw new Error("GITHUB_TOKEN appears to be invalid (too short)");
+  }
+
+  if (trimmedToken === "YOUR_TOKEN_HERE" || trimmedToken === "YOUR_GITHUB_TOKEN") {
+    throw new Error("GITHUB_TOKEN appears to be a placeholder value");
+  }
+}
 
 export interface PerformanceResults {
   bundleSize?: {
@@ -38,8 +54,13 @@ export class GitHubIntegration {
   private resultsPath: string;
 
   constructor(token: string, repository: string) {
+    validateGitHubToken(token);
+    validateRepository(repository);
+
     this.octokit = new Octokit({ auth: token });
-    [this.owner, this.repo] = repository.split("/");
+    const parts = repository.split("/");
+    this.owner = parts[0];
+    this.repo = parts[1];
     this.resultsPath = ".performance-enforcer/results.json";
   }
 
@@ -52,7 +73,7 @@ export class GitHubIntegration {
       const content = fs.readFileSync(this.resultsPath, "utf-8");
       return JSON.parse(content) as PerformanceResults;
     } catch (error) {
-      console.error("Failed to load results:", error);
+      Reporter.error("Failed to load results", error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -61,12 +82,11 @@ export class GitHubIntegration {
     const results = this.loadResults();
 
     if (!results) {
-      console.log("No performance results found. Skipping comment.");
+      Reporter.info("No performance results found. Skipping comment.");
       return;
     }
 
     const comment = this.generateComment(results);
-    const runId = Date.now();
 
     try {
       const result = await this.octokit.rest.issues.createComment({
@@ -76,10 +96,16 @@ export class GitHubIntegration {
         body: comment,
       });
 
-      console.log(`Posted performance comment to PR #${prNumber}`);
-      console.log(`Comment URL: ${result.data.html_url}`);
+      Reporter.info(`Posted performance comment to PR #${prNumber}`);
+      Reporter.info(`Comment URL: ${result.data.html_url}`);
     } catch (error: unknown) {
-      console.error("Failed to post comment:", error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Reporter.error(`Failed to post comment: ${errorMessage}`);
+
+      if (errorMessage.includes("401") || errorMessage.includes("403")) {
+        Reporter.error("Authentication failed. Please check your GITHUB_TOKEN has appropriate permissions.");
+      }
+      throw error;
     }
   }
 
@@ -107,9 +133,11 @@ export class GitHubIntegration {
         body: comment,
       });
 
-      console.log(`Updated performance comment on PR #${prNumber}`);
+      Reporter.info(`Updated performance comment on PR #${prNumber}`);
     } catch (error: unknown) {
-      console.error("Failed to update comment:", error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Reporter.error(`Failed to update comment: ${errorMessage}`);
+      throw error;
     }
   }
 
@@ -117,7 +145,7 @@ export class GitHubIntegration {
     const results = this.loadResults();
 
     if (!results) {
-      console.log("No performance results found. Skipping status check.");
+      Reporter.info("No performance results found. Skipping status check.");
       return;
     }
 
@@ -145,9 +173,11 @@ export class GitHubIntegration {
         context: "performance-enforcer",
       });
 
-      console.log(`Set status check: ${state} - ${description}`);
+      Reporter.info(`Set status check: ${state} - ${description}`);
     } catch (error: unknown) {
-      console.error("Failed to set status check:", error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Reporter.error(`Failed to set status check: ${errorMessage}`);
+      throw error;
     }
   }
 
@@ -160,14 +190,17 @@ export class GitHubIntegration {
         per_page: 100,
       });
 
-      const botComment = comments.find((comment: any) =>
-        comment.user?.type === "Bot" &&
-        comment.body?.includes("## Performance Results")
-      );
+      const botComment = comments.find((comment) => {
+        const user = comment.user as { type?: string } | undefined;
+        return user?.type === "Bot" &&
+          typeof comment.body === "string" &&
+          comment.body.includes("## Performance Results");
+      });
 
       return botComment?.id || null;
     } catch (error) {
-      console.error("Failed to find existing comment:", error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Reporter.error(`Failed to find existing comment: ${errorMessage}`);
       return null;
     }
   }
@@ -245,5 +278,20 @@ export class GitHubIntegration {
     if (value <= threshold) return "PASS";
     if (value <= threshold * 1.1) return "WARN";
     return "FAIL";
+  }
+}
+
+function validateRepository(repository: string): void {
+  if (!repository || typeof repository !== "string") {
+    throw new Error("Repository must be a non-empty string");
+  }
+
+  const parts = repository.split("/");
+  if (parts.length !== 2) {
+    throw new Error("Repository must be in format 'owner/repo'");
+  }
+
+  if (!parts[0] || !parts[1]) {
+    throw new Error("Repository owner and name cannot be empty");
   }
 }

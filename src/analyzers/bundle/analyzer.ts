@@ -1,4 +1,5 @@
 import type { TreemapNode } from "./treemap.js";
+import Reporter from "../../core/reporter.js";
 
 export interface BundleAnalysis {
   totalSize: number;
@@ -45,9 +46,9 @@ export class BundleAnalyzer {
     const totalModules = this.countTotalModules(chunks);
 
     const modules = this.extractModuleInfo(chunks);
-    const duplicates = this.findDuplicateModules(modules);
-    const deadCode = this.findDeadCode(modules, chunks);
-    const largestModules = modules
+    const { duplicateCount, modulesWithDuplicates } = this.findDuplicateModules(modules);
+    const deadCode = this.findDeadCode(modulesWithDuplicates, chunks);
+    const largestModules = modulesWithDuplicates
       .sort((a, b) => b.size - a.size)
       .slice(0, 10);
 
@@ -55,10 +56,10 @@ export class BundleAnalyzer {
       totalSize,
       chunkCount: chunks.length,
       totalModules,
-      duplicateModules: duplicates.length,
+      duplicateModules: duplicateCount,
       deadCodeModules: deadCode.length,
       largestModules,
-      modules,
+      modules: modulesWithDuplicates,
     };
   }
 
@@ -79,6 +80,39 @@ export class BundleAnalyzer {
     } as TreemapNode;
   }
 
+  compareBundles(currentChunks: Chunk[], previousChunks: Chunk[]): BundleDiff {
+    const previousIds = new Set(previousChunks.map(c => c.id));
+    const currentIds = new Set(currentChunks.map(c => c.id));
+
+    const addedChunks = currentChunks.filter(c => !previousIds.has(c.id));
+    const removedChunks = previousChunks.filter(c => !currentIds.has(c.id));
+
+    const modifiedChunks = currentChunks
+      .filter(current => {
+        const previous = previousChunks.find(p => p.id === current.id);
+        return previous && previous.size !== current.size;
+      })
+      .map(current => {
+        const previous = previousChunks.find(p => p.id === current.id)!;
+        return {
+          chunk: current,
+          oldSize: previous.size,
+          newSize: current.size,
+          sizeDelta: current.size - previous.size,
+        };
+      });
+
+    const totalSizeChange = currentChunks.reduce((sum, c) => sum + c.size, 0)
+      - previousChunks.reduce((sum, c) => sum + c.size, 0);
+
+    return {
+      addedChunks,
+      removedChunks,
+      modifiedChunks,
+      totalSizeChange,
+    };
+  }
+
   checkBudget(chunks: Chunk[], budgets: Array<{ path: string; max: string }>): Array<{
     path: string;
     currentSize: number;
@@ -89,8 +123,8 @@ export class BundleAnalyzer {
       let regex: RegExp;
       try {
         regex = new RegExp(budget.path);
-      } catch (error) {
-        console.error(`Invalid regex pattern in budget: ${budget.path}`);
+      } catch {
+        Reporter.error(`Invalid regex pattern in budget: ${budget.path}`);
         return {
           path: budget.path,
           currentSize: 0,
@@ -124,15 +158,17 @@ export class BundleAnalyzer {
   }
 
   private countTotalModules(chunks: Chunk[]): number {
-    let count = 0;
+    const uniqueModules = new Set<string>();
 
     for (const chunk of chunks) {
       if (chunk.modules) {
-        count += chunk.modules.length;
+        for (const module of chunk.modules) {
+          uniqueModules.add(module);
+        }
       }
     }
 
-    return count;
+    return uniqueModules.size;
   }
 
   private extractModuleInfo(chunks: Chunk[]): ModuleInfo[] {
@@ -156,18 +192,28 @@ export class BundleAnalyzer {
     return modules;
   }
 
-  private findDuplicateModules(modules: ModuleInfo[]): ModuleInfo[] {
+  private findDuplicateModules(modules: ModuleInfo[]): { duplicateCount: number; modulesWithDuplicates: ModuleInfo[] } {
+    const nameCount = new Map<string, number>();
     const duplicateNames = new Set<string>();
 
     for (const module of modules) {
-      if (duplicateNames.has(module.name)) continue;
-      const count = modules.filter(m => m.name === module.name).length;
-      if (count > 1) duplicateNames.add(module.name);
+      const count = (nameCount.get(module.name) || 0) + 1;
+      nameCount.set(module.name, count);
+      if (count > 1) {
+        duplicateNames.add(module.name);
+      }
     }
 
-    return modules
-      .filter(module => duplicateNames.has(module.name))
-      .map(module => ({ ...module, isDuplicate: true }));
+    // Mark all instances of duplicate modules
+    const modulesWithDuplicates = modules.map(module => ({
+      ...module,
+      isDuplicate: duplicateNames.has(module.name),
+    }));
+
+    return {
+      duplicateCount: duplicateNames.size,
+      modulesWithDuplicates,
+    };
   }
 
   private findDeadCode(modules: ModuleInfo[], chunks: Chunk[]): ModuleInfo[] {
@@ -177,17 +223,20 @@ export class BundleAnalyzer {
         .flatMap(c => c.modules || [])
     );
 
-    const modulesInNonEntryChunks = modules.filter(
-      m => !entryChunkNames.has(m.name)
-    );
-
     const modulesInMultipleChunks = new Set<string>();
+    const moduleCount = new Map<string, number>();
+
     for (const module of modules) {
-      const occurrences = modules.filter(m => m.name === module.name).length;
-      if (occurrences > 1) modulesInMultipleChunks.add(module.name);
+      const count = (moduleCount.get(module.name) || 0) + 1;
+      moduleCount.set(module.name, count);
+      if (count > 1) {
+        modulesInMultipleChunks.add(module.name);
+      }
     }
 
-    return modulesInNonEntryChunks.filter(module => !modulesInMultipleChunks.has(module.name));
+    return modules
+      .filter(m => !entryChunkNames.has(m.name) && !modulesInMultipleChunks.has(m.name))
+      .map(module => ({ ...module, isDeadCode: true }));
   }
 
   private parseSize(sizeStr: string): number {
@@ -195,7 +244,7 @@ export class BundleAnalyzer {
 
     const match = sizeStr.match(/^(\d+(?:\.\d+)?)\s*(kb|mb|gb)?$/i);
     if (!match) {
-      console.warn(`Invalid size format: ${sizeStr}`);
+      Reporter.warn(`Invalid size format: ${sizeStr}`);
       return 0;
     }
 

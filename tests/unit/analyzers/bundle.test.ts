@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BundleAnalyzer, type Chunk } from "../../src/analyzers/bundle/analyzer";
 
-vi.mock("../../src/core/reporter");
+vi.mock("fs", () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  readdirSync: vi.fn(),
+  statSync: vi.fn(),
+}));
 
 describe("BundleAnalyzer", () => {
   let analyzer: BundleAnalyzer;

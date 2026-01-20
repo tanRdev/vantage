@@ -154,7 +154,7 @@ describe("GitHubIntegration", () => {
           repo: "repo",
           sha: "abc123",
           state: "success",
-          context: "performance-enforcer",
+          context: "vantage",
         })
       );
     });
@@ -176,7 +176,7 @@ describe("GitHubIntegration", () => {
       expect(integration["octokit"].rest.repos.createCommitStatus).toHaveBeenCalledWith(
         expect.objectContaining({
           state: "failure",
-          context: "performance-enforcer",
+          context: "vantage",
         })
       );
     });

@@ -14,8 +14,8 @@ Thank you for your interest in contributing! This document provides guidelines f
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/performance-enforcer.git
-   cd performance-enforcer
+   git clone https://github.com/YOUR_USERNAME/vantage.git
+   cd vantage
    ```
 
 ### Install Dependencies
@@ -33,7 +33,7 @@ npm run build
 ## Project Structure
 
 ```
-performance-enforcer/
+vantage/
 ├── src/
 │   ├── analyzers/      # Bundle and runtime analyzers
 │   ├── commands/       # CLI commands

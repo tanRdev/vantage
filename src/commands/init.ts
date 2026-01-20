@@ -2,16 +2,16 @@ import { Command } from "@oclif/core";
 import type * as FS from "fs";
 
 export default class Init extends Command {
-  static description = "Initialize performance-enforcer configuration";
+  static description = "Initialize vantage configuration";
   static id = "init";
 
   async run(): Promise<void> {
-    console.log("Initializing performance-enforcer...");
+    console.log("Initializing vantage...");
 
     const args = process.argv.slice(2);
     const forceFlag = args.includes("--force") || args.includes("-f");
 
-    console.log("\n📝 Creating .performance-enforcer.yml...");
+    console.log("\n📝 Creating .vantage.yml...");
 
     const config = {
       framework: "nextjs",
@@ -114,17 +114,17 @@ runtime:
       const fs = await import("fs");
       const fsModule = fs as typeof FS;
 
-      if (fsModule.existsSync(".performance-enforcer.yml") && !forceFlag) {
+      if (fsModule.existsSync(".vantage.yml") && !forceFlag) {
         console.log("\n⚠️  Config file already exists. Use --force to overwrite.");
         return;
       }
 
-      fsModule.writeFileSync(".performance-enforcer.yml", yamlContent, "utf-8");
+      fsModule.writeFileSync(".vantage.yml", yamlContent, "utf-8");
       console.log("✅ Configuration created successfully!");
       console.log("\nNext steps:");
-      console.log("  1. Review .performance-enforcer.yml");
-      console.log("  2. Run: performance-enforcer check");
-      console.log("  3. Run: performance-enforcer bundle analyze");
+      console.log("  1. Review .vantage.yml");
+      console.log("  2. Run: vantage check");
+      console.log("  3. Run: vantage bundle analyze");
     } catch (error) {
       console.error("❌ Failed to create config file:", error);
       process.exit(1);

@@ -61,7 +61,7 @@ export class GitHubIntegration {
     const parts = repository.split("/");
     this.owner = parts[0];
     this.repo = parts[1];
-    this.resultsPath = ".performance-enforcer/results.json";
+    this.resultsPath = ".vantage/results.json";
   }
 
   loadResults(): PerformanceResults | null {
@@ -170,7 +170,7 @@ export class GitHubIntegration {
         sha,
         state,
         description,
-        context: "performance-enforcer",
+        context: "vantage",
       });
 
       Reporter.info(`Set status check: ${state} - ${description}`);

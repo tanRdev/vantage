@@ -2,7 +2,7 @@
 
 ## Project Decisions
 
-- **Name**: `performance-enforcer`
+- **Name**: `vantage`
 - **Framework**: Next.js MVP (App + Pages Router)
 - **Bundle Analysis**: Deep (treemaps, module-level, dependency impact)
 - **Dashboard**: Local + optional GitHub Pages/Netlify deploy
@@ -65,7 +65,7 @@
 - Multi-run Lighthouse (median values)
 
 ### Configuration
-- YAML-based config (`.performance-enforcer.yml`)
+- YAML-based config (`.vantage.yml`)
 - Zod schema validation
 - Smart defaults for Next.js
 - Route-specific budgets
@@ -73,7 +73,7 @@
 - Ignore patterns support
 
 ### Developer Experience
-- Single command setup (`performance-enforcer init`)
+- Single command setup (`vantage init`)
 - Zero-config mode
 - Clear error messages with fixes
 - Watch mode for continuous monitoring
@@ -307,7 +307,7 @@ runtime:
 ### Technical
 - Next.js 13-15 support (App + Pages Router)
 - Webpack + Turbopack support
-- <2s `performance-enforcer check` execution
+- <2s `vantage check` execution
 - 90%+ test coverage
 - Zero critical vulnerabilities
 

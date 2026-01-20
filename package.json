@@ -1,10 +1,10 @@
 {
-  "name": "performance-enforcer",
+  "name": "vantage",
   "version": "1.0.0",
   "description": "Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration",
   "main": "dist/index.js",
   "bin": {
-    "performance-enforcer": "./dist/index.js"
+    "vantage": "./dist/index.js"
   },
   "type": "module",
   "scripts": {
@@ -60,8 +60,8 @@
     "vitest": "^2.0.0"
   },
   "oclif": {
-    "bin": "performance-enforcer",
-    "dirname": "performance-enforcer",
+    "bin": "vantage",
+    "dirname": "vantage",
     "commands": "./dist/commands",
     "topicSeparator": ":",
     "plugins": [

@@ -47,7 +47,7 @@ export class RuntimeChecker {
       numberOfRuns: this.config.lighthouse?.numberOfRuns || 3,
       preset: this.config.lighthouse?.preset || "desktop",
       throttling: this.config.lighthouse?.throttling || "fast-3g",
-      outputDir: ".performance-enforcer/lighthouse",
+      outputDir: ".vantage/lighthouse",
     });
 
     const lighthouseResults = await lighthouseRunner.run();

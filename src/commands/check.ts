@@ -11,7 +11,7 @@ export default class Check extends Command {
   static strict = false;
 
   async run(): Promise<void> {
-    Reporter.info("Running performance-enforcer checks...");
+    Reporter.info("Running vantage checks...");
     Reporter.info("Loading configuration...");
 
     let hasFailures = false;

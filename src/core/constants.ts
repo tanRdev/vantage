@@ -25,5 +25,5 @@ export const DEFAULT_LIGHTHOUSE_PRESET = "desktop" as const;
 export const DEFAULT_THROTTLING = "fast-3g" as const;
 
 // Config file
-export const CONFIG_FILE = ".performance-enforcer.yml";
-export const OUTPUT_DIR = ".performance-enforcer";
+export const CONFIG_FILE = ".vantage.yml";
+export const OUTPUT_DIR = ".vantage";

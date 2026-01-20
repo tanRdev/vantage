@@ -44,7 +44,7 @@ export class Storage {
   private dbPath: string;
 
   constructor(storagePath?: string) {
-    const storageDir = storagePath || path.join(os.homedir(), ".performance-enforcer");
+    const storageDir = storagePath || path.join(os.homedir(), ".vantage");
 
     if (!fs.existsSync(storageDir)) {
       fs.mkdirSync(storageDir, { recursive: true });

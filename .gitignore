@@ -8,7 +8,7 @@ dist/
 out/
 
 # Logs
-.performance-enforcer/
+.vantage/
 *.log
 
 # IDE

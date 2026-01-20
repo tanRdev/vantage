@@ -5,13 +5,13 @@ This guide covers common usage patterns for Performance Enforcer.
 ## Installation
 
 ```bash
-npm install -g performance-enforcer
+npm install -g vantage
 ```
 
 Or use npx without installing:
 
 ```bash
-npx performance-enforcer <command>
+npx vantage <command>
 ```
 
 ## Commands
@@ -21,17 +21,17 @@ npx performance-enforcer <command>
 Initialize Performance Enforcer in your project.
 
 ```bash
-performance-enforcer init
+vantage init
 ```
 
-This creates a `.performance-enforcer.yml` configuration file in your project root.
+This creates a `.vantage.yml` configuration file in your project root.
 
 ### check
 
 Run all configured performance checks.
 
 ```bash
-performance-enforcer check
+vantage check
 ```
 
 This command:
@@ -45,7 +45,7 @@ This command:
 Run bundle analysis only.
 
 ```bash
-performance-enforcer bundle
+vantage bundle
 ```
 
 ### dashboard
@@ -53,7 +53,7 @@ performance-enforcer bundle
 Launch the interactive dashboard.
 
 ```bash
-performance-enforcer dashboard
+vantage dashboard
 ```
 
 The dashboard opens in your browser at `http://localhost:3000`.
@@ -63,13 +63,13 @@ The dashboard opens in your browser at `http://localhost:3000`.
 GitHub integration commands for CI/CD.
 
 ```bash
-performance-enforcer github --post-comment
-performance-enforcer github --set-status
+vantage github --post-comment
+vantage github --set-status
 ```
 
 ## Configuration
 
-Create a `.performance-enforcer.yml` in your project root:
+Create a `.vantage.yml` in your project root:
 
 ```yaml
 framework: nextjs
@@ -99,13 +99,13 @@ Add to `.github/workflows/performance.yml`:
 
 ```yaml
 - name: Run performance checks
-  run: npx performance-enforcer check
+  run: npx vantage check
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 - name: Post results to PR
   if: github.event_name == 'pull_request'
-  run: npx performance-enforcer github --post-comment
+  run: npx vantage github --post-comment
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     GITHUB_REPOSITORY: ${{ github.repository }}
@@ -117,20 +117,20 @@ Add to `.github/workflows/performance.yml`:
 ```yaml
 performance:
   script:
-    - npx performance-enforcer check
+    - npx vantage check
   artifacts:
     paths:
-      - .performance-enforcer/
+      - .vantage/
 ```
 
 ## Common Workflows
 
 ### Local Development
 
-1. Install globally: `npm install -g performance-enforcer`
-2. Initialize in project: `performance-enforcer init`
-3. Configure thresholds in `.performance-enforcer.yml`
-4. Run checks: `performance-enforcer check`
+1. Install globally: `npm install -g vantage`
+2. Initialize in project: `vantage init`
+3. Configure thresholds in `.vantage.yml`
+4. Run checks: `vantage check`
 
 ### Pre-commit Hook
 
@@ -138,7 +138,7 @@ Add to `.husky/pre-commit`:
 
 ```bash
 #!/bin/sh
-npx performance-enforcer bundle || exit 1
+npx vantage bundle || exit 1
 ```
 
 ### Pre-push Hook
@@ -147,7 +147,7 @@ Add to `.husky/pre-push`:
 
 ```bash
 #!/bin/sh
-npx performance-enforcer check || exit 1
+npx vantage check || exit 1
 ```
 
 ## Exit Codes

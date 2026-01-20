@@ -47,7 +47,7 @@ async function main(): Promise<void> {
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log("Performance Enforcer - Performance budget enforcement for Next.js apps\n");
-    console.log("\nUsage: performance-enforcer <command> [options]\n");
+    console.log("\nUsage: vantage <command> [options]\n");
     console.log("\nCommands:");
     for (const cmd of commands) {
       const desc = cmd.description || cmd.id || "Unknown command";

@@ -1,7 +1,7 @@
 import winston from "winston";
 import * as path from "path";
 
-const logDir = path.join(process.cwd(), ".performance-enforcer");
+const logDir = path.join(process.cwd(), ".vantage");
 
 export enum LogLevel {
   ERROR = "error",

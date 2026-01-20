@@ -6,9 +6,9 @@ Performance Enforcer uses YAML configuration files to define performance budgets
 
 The tool looks for configuration in the following order:
 
-1. `.performance-enforcer.yml` in project root
-2. `.performance-enforcer.yaml` in project root
-3. `performance-enforcer.yml` in project root
+1. `.vantage.yml` in project root
+2. `.vantage.yaml` in project root
+3. `vantage.yml` in project root
 4. Default configuration
 
 ## Full Configuration Example
@@ -61,7 +61,7 @@ bundle:
 # Output settings
 output:
   # Results directory
-  dir: .performance-enforcer
+  dir: .vantage
   # JSON output file
   json: results.json
   # HTML report
@@ -133,7 +133,7 @@ Output file configuration.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `dir` | string | `.performance-enforcer` | Output directory |
+| `dir` | string | `.vantage` | Output directory |
 | `json` | string | `results.json` | JSON results file |
 | `html` | string | `report.html` | HTML report file |
 

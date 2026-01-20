@@ -12,15 +12,15 @@ npm install
 npm run build
 
 # Run performance checks
-npx performance-enforcer check
+npx vantage check
 
 # Launch dashboard
-npx performance-enforcer dashboard
+npx vantage dashboard
 ```
 
 ## Performance Configuration
 
-This app includes `.performance-enforcer.yml` with sensible defaults for a typical Next.js application.
+This app includes `.vantage.yml` with sensible defaults for a typical Next.js application.
 
 ## Features
 

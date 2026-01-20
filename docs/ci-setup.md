@@ -25,7 +25,7 @@ The workflow file is already created at `.github/workflows/performance.yml`.
 
 ### Step 4: Configure Performance Enforcer
 
-Add a `.performance-enforcer.yml` file to your repository root:
+Add a `.vantage.yml` file to your repository root:
 
 ```yaml
 framework: nextjs
@@ -66,7 +66,7 @@ To require performance checks to pass before merging:
 2. Add rule for `main` branch
 3. Enable:
    - Require status checks to pass before merging
-   - Add "performance-enforcer" status check to required checks
+   - Add "vantage" status check to required checks
 
 ## Workflow Triggers
 
@@ -79,7 +79,7 @@ The workflow runs on:
 1. **Checkout** - Pulls your code
 2. **Setup Node.js** - Installs Node 18 with npm caching
 3. **Install dependencies** - Runs `npm ci`
-4. **Run performance checks** - Executes `performance-enforcer check`
+4. **Run performance checks** - Executes `vantage check`
 5. **Post results to PR** - Comments on PR with metrics table
 6. **Set status check** - Updates GitHub status with pass/fail
 7. **Upload artifacts** - Saves detailed results as artifacts
@@ -153,7 +153,7 @@ Detailed performance results are uploaded as GitHub Actions artifacts:
 
 ### Changing Routes Tested
 
-Edit `runtime.routes` in `.performance-enforcer.yml`:
+Edit `runtime.routes` in `.vantage.yml`:
 
 ```yaml
 runtime:
@@ -224,7 +224,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - run: |
-          npx performance-enforcer check
+          npx vantage check
         env:
           TEST_PRESET: ${{ matrix.preset }}
           TEST_THROTTLING: ${{ matrix.throttling }}

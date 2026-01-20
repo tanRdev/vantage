@@ -29,9 +29,9 @@ export default function AboutPage() {
           <section className="card">
             <h2 className="text-xl font-semibold mb-3">Getting Started</h2>
             <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm">
-              <p>$ npm install -g performance-enforcer</p>
-              <p className="mt-2">$ performance-enforcer init</p>
-              <p className="mt-2">$ performance-enforcer check</p>
+              <p>$ npm install -g vantage</p>
+              <p className="mt-2">$ vantage init</p>
+              <p className="mt-2">$ vantage check</p>
             </div>
           </section>
         </div>

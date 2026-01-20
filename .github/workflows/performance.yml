@@ -25,7 +25,7 @@ jobs:
 
       - name: Run performance checks
         run: |
-          npx performance-enforcer check || true
+          npx vantage check || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -35,7 +35,7 @@ jobs:
       - name: Post results to PR
         if: github.event_name == 'pull_request'
         run: |
-          npx performance-enforcer github --post-comment
+          npx vantage github --post-comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -44,7 +44,7 @@ jobs:
       - name: Set status check
         if: github.event_name == 'pull_request'
         run: |
-          npx performance-enforcer github --set-status
+          npx vantage github --set-status
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -55,5 +55,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: performance-results
-          path: .performance-enforcer/
+          path: .vantage/
           retention-days: 30

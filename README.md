@@ -2,7 +2,7 @@
 
 > Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration
 
-[![npm version](https://badge.fury.io/js/performance-enforcer.svg)](https://www.npmjs.com/package/performance-enforcer)
+[![npm version](https://badge.fury.io/js/vantage.svg)](https://www.npmjs.com/package/vantage)
 [![License: MIT](https://img.shields.io/badge/License/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/tests/passing/Performance%209Tests/20Tests.svg)](https://img.shields.io/badge/tests/passing/Performance%209Tests20Tests.svg))
 [![Type Safety](https://img.shields.io/badge/types/TypeScript-safe-blue)](https://img.shields.io/badge/types/TypeScript-safe-blue.svg)]
@@ -44,7 +44,7 @@
 - 📦 Detailed results upload as artifacts
 
 ### Configuration
-- ⚙️ YAML-based config (`.performance-enforcer.yml`)
+- ⚙️ YAML-based config (`.vantage.yml`)
 - ✅ Zod schema validation
 - 🎯 Smart defaults for Next.js
 - 📝 Route-specific budgets
@@ -52,7 +52,7 @@
 - 🚫 Ignore patterns support
 
 ### Developer Experience
-- 🚀 Single command setup (`performance-enforcer init`)
+- 🚀 Single command setup (`vantage init`)
 - ⚡ Zero-config mode
 - 💬 Clear error messages with fixes
 - 👀 Watch mode for continuous monitoring
@@ -62,34 +62,34 @@
 
 ```bash
 # npm
-npm install -g performance-enforcer
+npm install -g vantage
 
 # yarn
-yarn global add performance-enforcer
+yarn global add vantage
 
 # pnpm
-pnpm add -g performance-enforcer
+pnpm add -g vantage
 ```
 
 ## Quick Start
 
 ```bash
 # Initialize configuration
-performance-enforcer init
+vantage init
 
 # Run all checks
-performance-enforcer check
+vantage check
 
 # Analyze bundles
-performance-enforcer bundle
+vantage bundle
 
 # Launch dashboard
-performance-enforcer dashboard
+vantage dashboard
 ```
 
 ## Configuration
 
-Create a `.performance-enforcer.yml` file in your project root:
+Create a `.vantage.yml` file in your project root:
 
 ```yaml
 framework: nextjs
@@ -190,7 +190,7 @@ jobs:
 
       - name: Run performance checks
         run: |
-          npx performance-enforcer check || true
+          npx vantage check || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -220,7 +220,7 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: performance-results
-            path: .performance-enforcer/
+            path: .vantage/
             retention-days: 30
 ```
 
@@ -231,7 +231,7 @@ See [CI/CD Setup](docs/ci-setup.md) for detailed configuration.
 ### Local Development
 
 ```bash
-performance-enforcer dashboard
+vantage dashboard
 ```
 
 Opens at http://localhost:3000
@@ -239,7 +239,7 @@ Opens at http://localhost:3000
 ### Deploy to GitHub Pages
 
 ```bash
-performance-enforcer dashboard --deploy
+vantage dashboard --deploy
 ```
 
 Follow instructions to deploy your dashboard to GitHub Pages.

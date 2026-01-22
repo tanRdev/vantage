@@ -38,12 +38,23 @@ describe("ThresholdEngine", () => {
       expect(result.message).toBeDefined();
     });
 
-    it("should handle zero previous size", () => {
+    it("should handle zero previous size - treat as baseline measurement", () => {
       const result = ThresholdEngine.compareBundleSize(100, 0, 10, 5);
 
-      expect(result.passed).toBe(false);
-      expect(result.status).toBe("fail");
-      expect(result.message).toBeDefined();
+      // When previous is 0, this is a baseline measurement - should pass
+      expect(result.passed).toBe(true);
+      expect(result.status).toBe("pass");
+      expect(result.delta).toBe(100);
+      expect(result.message).toBeUndefined();
+    });
+
+    it("should handle both current and previous as zero", () => {
+      const result = ThresholdEngine.compareBundleSize(0, 0, 10, 5);
+
+      expect(result.passed).toBe(true);
+      expect(result.status).toBe("pass");
+      expect(result.delta).toBe(0);
+      expect(result.message).toBeUndefined();
     });
   });
 

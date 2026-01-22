@@ -15,6 +15,17 @@ export class ThresholdEngine {
     warningThreshold: number
   ): ThresholdResult {
     const delta = current - previous;
+
+    // When previous is 0, treat as baseline measurement (no meaningful comparison)
+    if (previous === 0) {
+      return {
+        passed: true,
+        delta,
+        status: "pass",
+        message: undefined,
+      };
+    }
+
     const percentChange = (delta / previous) * 100;
 
     if (percentChange <= warningThreshold) {

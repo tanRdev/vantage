@@ -10,17 +10,30 @@ interface TreemapNode {
   value: number
 }
 
-type D3HierarchyNode = d3.HierarchyNode<unknown>
+interface HierarchyData {
+  name: string
+  children: TreemapNode[]
+  value: number
+}
+
+type D3HierarchyNode = d3.HierarchyRectangularNode<HierarchyData>
+
+const DEFAULT_HEIGHT = 400
+const MIN_WIDTH = 300
 
 export function BundleTreemap() {
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
   const [data, setData] = useState<TreemapNode[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedNode, setSelectedNode] = useState<D3HierarchyNode | null>(null)
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
+  const [dimensions, setDimensions] = useState({ width: 800, height: DEFAULT_HEIGHT })
   const nodesRef = useRef<d3.Selection<d3.BaseType | SVGRectElement, D3HierarchyNode, any, any> | null>(null)
+  const resizeObserverRef = useRef<ResizeObserver | null>(null)
+  const treemapRootRef = useRef<d3.HierarchyRectangularNode<HierarchyData> | null>(null)
 
   useEffect(() => {
     api.getBundles({ limit: 100 })
@@ -47,27 +60,76 @@ export function BundleTreemap() {
       .finally(() => setIsLoading(false))
   }, [])
 
+  // Cleanup effect - ensures tooltip is always removed when data changes or component unmounts
+  // This must run on data changes to handle the early return case in the main render effect
+  useEffect(() => {
+    return () => {
+      if (tooltipRef.current) {
+        tooltipRef.current.remove()
+        tooltipRef.current = null
+      }
+    }
+  }, [data])
+
+  // Handle container resize with ResizeObserver
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const container = containerRef.current
+
+    // Initial dimension measurement
+    const updateDimensions = () => {
+      if (!container) return
+      const containerWidth = Math.max(MIN_WIDTH, container.clientWidth)
+      setDimensions({ width: containerWidth, height: DEFAULT_HEIGHT })
+    }
+
+    updateDimensions()
+
+    // Set up ResizeObserver for responsive behavior
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect
+        if (width >= MIN_WIDTH) {
+          setDimensions({ width, height: DEFAULT_HEIGHT })
+        }
+      }
+    })
+
+    resizeObserver.observe(container)
+    resizeObserverRef.current = resizeObserver
+
+    return () => {
+      resizeObserver.disconnect()
+      resizeObserverRef.current = null
+    }
+  }, [])
+
+  // Render treemap when data or dimensions change
   useEffect(() => {
     if (data.length === 0 || !svgRef.current) return
 
-    const width = 800
-    const height = 400
+    const { width, height } = dimensions
 
     const treemap = d3
-      .treemap()
+      .treemap<HierarchyData>()
       .size([width, height])
       .padding(2)
       .round(true)
 
-    const root = d3
-      .hierarchy({ name: 'root', children: data, value: 0 })
-      .sum((d: any) => d.value)
+    const rootNode = d3
+      .hierarchy<HierarchyData>({ name: 'root', children: data, value: 0 })
+      .sum((d) => d.value)
       .sort((a, b) => (b.value || 0) - (a.value || 0))
 
-    treemap(root)
+    const root = treemap(rootNode) as d3.HierarchyRectangularNode<HierarchyData>
+    treemapRootRef.current = root
 
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
+
+    // Set SVG dimensions based on container size
+    svg.attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`)
 
     // Create a group for nodes
     const g = svg.append('g')
@@ -79,11 +141,11 @@ export function BundleTreemap() {
       .append('rect')
       .attr('class', 'node')
       .attr('data-index', (_d, i) => i)
-      .attr('x', (d: any) => d.x0)
-      .attr('y', (d: any) => d.y0)
-      .attr('width', (d: any) => Math.max(0, d.x1 - d.x0))
-      .attr('height', (d: any) => Math.max(0, d.y1 - d.y0))
-      .attr('fill', (d: any) => getColor((d.data as any).value))
+      .attr('x', (d) => d.x0)
+      .attr('y', (d) => d.y0)
+      .attr('width', (d) => Math.max(0, d.x1 - d.x0))
+      .attr('height', (d) => Math.max(0, d.y1 - d.y0))
+      .attr('fill', (d) => getColor(d.data.value))
       .attr('stroke', 'rgba(0,0,0,0.1)')
       .attr('stroke-width', 1)
       .attr('rx', 4)
@@ -91,14 +153,14 @@ export function BundleTreemap() {
       .attr('opacity', 0.9)
       .attr('tabindex', 0)
       .attr('role', 'button')
-      .attr('aria-label', (d: any) => `${(d.data as any).name}: ${formatBytes((d.data as any).value)}`)
+      .attr('aria-label', (d) => `${d.data.name}: ${formatBytes(d.data.value)}`)
       .on('click', function(_event, d) {
         setSelectedNode(d)
         d3.select(this).attr('stroke', 'hsl(var(--primary))').attr('stroke-width', 3)
       })
       .on('keydown', function(event: KeyboardEvent, d) {
-        const index = (this as any).getAttribute('data-index')
-        const currentIndex = parseInt(index || '0')
+        const index = d3.select(this).attr('data-index')
+        const currentIndex = parseInt(index ?? '0', 10)
 
         if (event.key === 'ArrowRight') {
           event.preventDefault()
@@ -129,7 +191,7 @@ export function BundleTreemap() {
         }
       })
 
-    nodesRef.current = nodes
+    nodesRef.current = nodes as d3.Selection<d3.BaseType | SVGRectElement, D3HierarchyNode, any, any>
 
     function focusNode(index: number) {
       const allNodes = nodes.nodes() as SVGRectElement[]
@@ -140,13 +202,13 @@ export function BundleTreemap() {
     }
 
     const labels = g
-      .selectAll('.label')
+      .selectAll<SVGTextElement, D3HierarchyNode>('.label')
       .data(root.leaves())
       .enter()
       .append('text')
       .attr('class', 'label')
-      .attr('x', (d: any) => (d.x0 + d.x1) / 2)
-      .attr('y', (d: any) => (d.y0 + d.y1) / 2)
+      .attr('x', (d) => (d.x0 + d.x1) / 2)
+      .attr('y', (d) => (d.y0 + d.y1) / 2)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('font-size', '12px')
@@ -154,10 +216,10 @@ export function BundleTreemap() {
       .attr('fill', 'rgba(255,255,255,0.95)')
       .style('text-shadow', '0 1px 3px rgba(0,0,0,0.7)')
       .style('pointer-events', 'none')
-      .text((d: any) => {
-        const width = d.x1 - d.x0
-        const height = d.y1 - d.y0
-        return width > 60 && height > 30 ? (d.data as any).name : ''
+      .text((d) => {
+        const nodeWidth = d.x1 - d.x0
+        const nodeHeight = d.y1 - d.y0
+        return nodeWidth > 60 && nodeHeight > 30 ? d.data.name : ''
       })
 
     // Tooltip
@@ -180,7 +242,7 @@ export function BundleTreemap() {
       tooltipRef.current = tooltip
     }
 
-    nodes.on('mouseover', function(event, d: any) {
+    nodes.on('mouseover', function(event, d) {
       d3.select(this).transition().duration(150).attr('opacity', 1)
       tooltip.transition().duration(150).style('opacity', 1)
       tooltip.html(`
@@ -203,26 +265,10 @@ export function BundleTreemap() {
       tooltip.transition().duration(150).style('opacity', 0)
     })
 
-    // Responsive resize
-    const resize = () => {
-      const container = svgRef.current?.parentElement
-      if (!container) return
-      const containerWidth = container.clientWidth
-      const scale = Math.min(1, containerWidth / width)
-      svg.attr('viewBox', `0 0 ${width} ${height}`).attr('width', containerWidth).attr('height', height * scale)
-    }
-
-    window.addEventListener('resize', resize)
-    resize()
-
     return () => {
-      window.removeEventListener('resize', resize)
-      if (tooltipRef.current) {
-        tooltipRef.current.remove()
-        tooltipRef.current = null
-      }
+      // Cleanup is handled by the tooltip cleanup effect
     }
-  }, [data])
+  }, [data, dimensions])
 
   function getColor(size: number): string {
     const bytes = size
@@ -282,7 +328,11 @@ export function BundleTreemap() {
           <span className="font-medium">Keyboard navigation:</span> Use arrow keys to navigate, Enter/Space to select, Escape to deselect
         </div>
 
-        <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
+        <div
+          ref={containerRef}
+          className="rounded-lg border border-border overflow-hidden bg-muted/20"
+          style={{ width: '100%' }}
+        >
           <svg
             ref={svgRef}
             className="w-full"

@@ -29,6 +29,8 @@ export interface Chunk {
   size: number;
   files: string[];
   modules?: string[];
+  /** Map of module name to actual size in bytes. When provided, used instead of even distribution. */
+  moduleSizes?: Record<string, number>;
 }
 
 export interface ModuleInfo {
@@ -177,9 +179,11 @@ export class BundleAnalyzer {
     for (const chunk of chunks) {
       if (chunk.modules) {
         for (const moduleName of chunk.modules) {
+          // Use actual module size if provided, otherwise use 0 to avoid incorrect even distribution
+          const size = chunk.moduleSizes?.[moduleName] ?? 0;
           modules.push({
             name: moduleName,
-            size: Math.round(chunk.size / chunk.modules.length),
+            size,
             path: chunk.name,
             dependencies: [],
             isDuplicate: false,

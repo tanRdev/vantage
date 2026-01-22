@@ -26,6 +26,8 @@ export interface Chunk {
   size: number;
   files: string[];
   modules?: string[];
+  /** Map of module name to actual size in bytes. When provided, used instead of even distribution. */
+  moduleSizes?: Record<string, number>;
 }
 
 export interface ModuleInfo {

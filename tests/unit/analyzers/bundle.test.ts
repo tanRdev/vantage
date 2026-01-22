@@ -67,9 +67,103 @@ describe("BundleAnalyzer", () => {
     });
 
     it("should identify largest modules", () => {
-      const analysis = analyzer.analyzeChunks(mockChunks);
+      // Use chunks with actual module sizes for deterministic ordering
+      const chunksWithSizes: Chunk[] = [
+        {
+          id: "main.js",
+          name: "main.js",
+          size: 1024 * 100,
+          files: ["main.js"],
+          modules: ["react", "lodash", "app"],
+          moduleSizes: {
+            "react": 1024 * 10,
+            "lodash": 1024 * 5,
+            "app": 1024 * 85,
+          },
+        },
+        {
+          id: "vendor.js",
+          name: "vendor.js",
+          size: 1024 * 200,
+          files: ["vendor.js"],
+          modules: ["react-dom", "react"],
+          moduleSizes: {
+            "react-dom": 1024 * 150,
+            "react": 1024 * 50,
+          },
+        },
+        {
+          id: "utils.js",
+          name: "utils.js",
+          size: 1024 * 50,
+          files: ["utils.js"],
+          modules: ["helper"],
+          moduleSizes: {
+            "helper": 1024 * 50,
+          },
+        },
+      ];
+      const analysis = analyzer.analyzeChunks(chunksWithSizes);
       expect(analysis.largestModules.length).toBeGreaterThan(0);
       expect(analysis.largestModules[0].name).toBe("react-dom");
+    });
+
+    it("should use actual module sizes when provided, not even distribution", () => {
+      // Chunk with 100KB total size
+      // With even distribution: each module would be 33.33KB
+      // With actual sizes: 60KB, 30KB, 10KB
+      const chunkWithSizes: Chunk[] = [
+        {
+          id: "main.js",
+          name: "main.js",
+          size: 1024 * 100,
+          files: ["main.js"],
+          modules: ["large-lib", "medium-lib", "small-lib"],
+          moduleSizes: {
+            "large-lib": 1024 * 60,
+            "medium-lib": 1024 * 30,
+            "small-lib": 1024 * 10,
+          },
+        },
+      ];
+
+      const analysis = analyzer.analyzeChunks(chunkWithSizes);
+
+      // Find the module sizes in the result
+      const largeLib = analysis.modules.find(m => m.name === "large-lib");
+      const mediumLib = analysis.modules.find(m => m.name === "medium-lib");
+      const smallLib = analysis.modules.find(m => m.name === "small-lib");
+
+      // Should use actual sizes, NOT even distribution (100/3 = 33.33KB)
+      expect(largeLib?.size).toBe(1024 * 60);
+      expect(mediumLib?.size).toBe(1024 * 30);
+      expect(smallLib?.size).toBe(1024 * 10);
+
+      // Total should still match chunk size
+      expect(analysis.modules.reduce((sum, m) => sum + m.size, 0)).toBe(1024 * 100);
+    });
+
+    it("should fall back to 0 size when module sizes not available", () => {
+      // Chunk without moduleSizes - should not make up sizes
+      const chunkWithoutSizes: Chunk[] = [
+        {
+          id: "main.js",
+          name: "main.js",
+          size: 1024 * 100,
+          files: ["main.js"],
+          modules: ["lib-a", "lib-b"],
+        },
+      ];
+
+      const analysis = analyzer.analyzeChunks(chunkWithoutSizes);
+
+      // When actual module sizes aren't available, modules should have 0 size
+      // rather than incorrectly distributing chunk size evenly
+      const libA = analysis.modules.find(m => m.name === "lib-a");
+      const libB = analysis.modules.find(m => m.name === "lib-b");
+
+      expect(libA?.size).toBe(0);
+      expect(libB?.size).toBe(0);
     });
   });
 

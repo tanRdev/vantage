@@ -1,64 +1,68 @@
-## Vantage
+<div align="center">
 
-> Performance budget enforcement for Next.js apps with deep bundle analysis, runtime metrics, and CI/CD integration
+  <img src="docs/assets/logo.png" alt="Vantage Logo" width="120" />
 
-[![npm version](https://badge.fury.io/js/vantage.svg)](https://www.npmjs.com/package/vantage)
-[![License: MIT](https://img.shields.io/badge/License/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests/passing/Performance%209Tests/20Tests.svg)](https://img.shields.io/badge/tests/passing/Performance%209Tests20Tests.svg))
-[![Type Safety](https://img.shields.io/badge/types/TypeScript-safe-blue)](https://img.shields.io/badge/types/TypeScript-safe-blue.svg)]
+  # ⚡ Vantage
 
-## Features
+  ### 🎯 Performance budget enforcement for Next.js apps
 
-### Core Features
-- 📦 Bundle size analysis with deep module-level breakdown
-- 🌳 Dependency tree visualization (interactive treemaps)
-- 📊 Bundle diff vs baseline with impact attribution
-- 🎯 Budget enforcement (absolute + percentage thresholds)
-- 🔍 Duplicate code detection
-- 💀 Dead code identification
-- 📦 Per-chunk size limits
+  [![npm version](https://badge.fury.io/js/vantage.svg)](https://www.npmjs.com/package/vantage)
+  [![License: MIT](https://img.shields.io/badge/License/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
+  [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 
-### Runtime Performance
-- ⚡ Lighthouse integration (multi-route testing)
-- 📈 Core Web Vitals collection (LCP, INP, CLS, TBT, FCP)
-- 🔎 Next.js App Router + Pages Router auto-detection
-- 🔄 Dynamic route pattern handling
-- ⚙️ ISR/SSG detection
-- 📊 Historical trend tracking
+  **Deep bundle analysis • Runtime metrics • Beautiful dashboard • CI/CD integration**
 
-### Dashboard
-- 🎨 Local embedded dashboard with shadcn UI components
-- 🚀 Interactive treemap visualizations (D3.js)
-- 📈 Trend charts (LCP, INP, CLS, bundle size over time)
-- 🗺 Per-route performance breakdown
-- 📅 Build history timeline
-- 🔍 Commit comparison view
-- 🌙 Dark mode support
+</div>
 
-### CI/CD Integration
-- 🤖 GitHub Actions workflow
-- 💬 PR comment generation (formatted tables)
-- ✅ Status check integration
-- 📉 Automatic baseline comparison
-- 🔄 Multi-run Lighthouse (median values)
-- 📦 Detailed results upload as artifacts
+---
 
-### Configuration
-- ⚙️ YAML-based config (`.vantage.yml`)
-- ✅ Zod schema validation
-- 🎯 Smart defaults for Next.js
-- 📝 Route-specific budgets
-- 🔍 Per-framework detection
-- 🚫 Ignore patterns support
+## ✨ Features
 
-### Developer Experience
-- 🚀 Single command setup (`vantage init`)
-- ⚡ Zero-config mode
-- 💬 Clear error messages with fixes
-- 👀 Watch mode for continuous monitoring
-- 📤 Export metrics (JSON/CSV)
+### 📦 Bundle Analysis
 
-## Installation
+- **Deep module-level breakdown** — See exactly what's in your bundles
+- **🌳 Interactive treemap visualization** — D3.js-powered visual exploration
+- **📊 Bundle diff vs baseline** — Track changes over time
+- **🎯 Smart budget enforcement** — Absolute and percentage thresholds
+- **🔍 Duplicate code detection** — Find redundant code across chunks
+- **💀 Dead code identification** — Spot unused exports and dependencies
+- **📏 Per-chunk size limits** — Fine-grained control
+
+### ⚡ Runtime Performance
+
+- **🔬 Lighthouse integration** — Multi-route automated testing
+- **📈 Core Web Vitals** — LCP, INP, CLS, FCP, TTFB tracking
+- **🎯 Smart route detection** — App Router + Pages Router support
+- **🔄 Dynamic pattern handling** — `[id]`, `[...slug]` automatically detected
+- **⚙️ ISR/SSG detection** — Know your rendering strategy
+- **📊 Historical trends** — Performance data over time
+
+### 🎨 Dashboard
+
+> A modern, beautiful performance monitoring dashboard built with Next.js 15 and shadcn/ui
+
+- **🌙 Dark mode support** — System preference detection + toggle
+- **📈 Real-time data visualization** — Live updates via WebSocket
+- **📊 Trend charts** — Recharts-powered metric graphs
+- **🗺 Interactive treemaps** — Explore bundle composition visually
+- **🔍 Search & filter** — Find what you need instantly
+- **📤 Export data** — CSV/JSON exports for further analysis
+- **⌨️ Keyboard navigation** — Fully accessible interface
+- **📱 Responsive design** — Works on any device
+
+### 🤖 CI/CD Integration
+
+- **🔧 GitHub Actions workflow** — Drop-in integration
+- **💬 PR comment generation** — Formatted results tables
+- **✅ Status check integration** — Pass/fail on PR
+- **📉 Baseline comparison** — Track regressions automatically
+- **🔄 Multi-run Lighthouse** — Median values for accuracy
+- **📦 Artifact uploads** — Detailed results preserved
+
+---
+
+## 🚀 Installation
 
 ```bash
 # npm
@@ -71,44 +75,55 @@ yarn global add vantage
 pnpm add -g vantage
 ```
 
-## Quick Start
+---
+
+## 🏃 Quick Start
 
 ```bash
-# Initialize configuration
+# 1️⃣ Initialize configuration (creates .vantage.yml)
 vantage init
 
-# Run all checks
+# 2️⃣ Run all performance checks
 vantage check
 
-# Analyze bundles
+# 3️⃣ Analyze bundles only
 vantage bundle
 
-# Launch dashboard
+# 4️⃣ Launch the dashboard 🎨
 vantage dashboard
 ```
 
-## Configuration
+**Dashboard opens at** `http://localhost:3000`
+
+---
+
+## ⚙️ Configuration
 
 Create a `.vantage.yml` file in your project root:
 
 ```yaml
+# Framework detection
 framework: nextjs
 
-# Bundle Analysis Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📦 Bundle Analysis
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 bundle:
-  analysis: deep
-  outputDir: .next
-  treemap: true
+  analysis: deep              # deep | standard
+  outputDir: .next           # Build output directory
+  treemap: true              # Generate treemap visualization
   budgets:
     - path: "app/**/*.js"
       max: 100kb
     - path: "chunks/main-*.js"
       max: 150kb
   thresholds:
-    regression: 10
-    warning: 5
+    regression: 10          # % increase that triggers failure
+    warning: 5              # % increase that triggers warning
 
-# Runtime Performance Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ⚡ Runtime Performance
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 runtime:
   routes:
     - /
@@ -118,52 +133,126 @@ runtime:
     - "/api/**"
     - "/_next/**"
   thresholds:
-    lcp: 2500
-    inp: 200
-    cls: 0.1
-    tbt: 300
-    lighthouse:
-    numberOfRuns: 3
-    preset: desktop
-    throttling: fast-3g
+    lcp: 2500                 # Largest Contentful Paint (ms)
+    inp: 200                  # Interaction to Next Paint (ms)
+    cls: 0.1                  # Cumulative Layout Shift
+    tbt: 300                  # Total Blocking Time (ms)
+  lighthouse:
+    numberOfRuns: 3          # Run multiple times for accuracy
+    preset: desktop          # desktop | mobile
+    throttling: fast-3g      # Network throttling
 ```
 
-## Commands
+---
+
+## 📜 Commands
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize configuration |
-| `check` | Run all performance checks |
-| `bundle` | Analyze bundle size and composition |
-| `dashboard` | Launch performance dashboard |
+| `vantage init` | ⚙️ Initialize configuration file |
+| `vantage check` | 🔍 Run all performance checks (bundle + runtime) |
+| `vantage bundle` | 📦 Analyze bundle size and composition |
+| `vantage runtime` | ⚡ Run Lighthouse performance tests |
+| `vantage dashboard` | 🎨 Launch performance dashboard |
+| `vantage github` | 🤖 GitHub Actions integration |
 
-## Next.js Integration
+---
 
-### App Router
-- ✅ Fully supported
-- ✅ Auto-detects routes from `app/` directory
-- ✅ Handles dynamic routes (`[id]`, `[...slug]`)
-- ✅ Excludes API routes and middleware
+## 🎨 Dashboard Preview
 
-### Pages Router
-- ✅ Fully supported
-- ✅ Auto-detects routes from `pages/` directory
-- ✅ Handles dynamic routes (`[id]`, `[...slug]`)
+### Main Dashboard
+- **Quick stats cards** — LCP, INP, CLS, Bundle Size at a glance
+- **Performance trends** — Interactive charts showing metrics over time
+- **Bundle analysis** — Searchable table with status indicators
+- **Route performance** — Per-route breakdown with scores
 
-### Turbopack
-- 🔄 Planned for v2.0
-- Currently Webpack-only
+### Treemap View
+- **Interactive visualization** — Click to explore bundle composition
+- **Color-coded sizes** — Green (good) → Yellow (warning) → Red (critical)
+- **Keyboard navigation** — Full accessibility support
 
-See [Next.js Guide](docs/nextjs-guide.md) for detailed setup.
+### Features
+- 🌙 **Dark mode** — System-aware with manual toggle
+- 🔄 **Auto-refresh** — Live data updates via Server-Sent Events
+- 🔍 **Search & filter** — Find specific bundles or routes
+- 📤 **Export** — Download data as CSV or JSON
+- ⌨️ **Keyboard accessible** — Full keyboard navigation support
 
-## CI/CD Integration
+### Configuration
+
+The dashboard can be configured with environment variables. Create a `.env.local` file in the `dashboard/` directory:
+
+```bash
+# SSE Server URL (default: http://localhost:3001)
+NEXT_PUBLIC_SSE_URL=http://localhost:3001
+```
+
+See `dashboard/.env.example` for a complete list of available configuration options.
+
+---
+
+## 📁 Project Structure
+
+```
+vantage/
+├── src/
+│   ├── commands/          # CLI commands
+│   │   ├── init.ts
+│   │   ├── check.ts
+│   │   ├── bundle.ts
+│   │   ├── runtime.ts
+│   │   └── dashboard.ts
+│   ├── analyzers/
+│   │   ├── bundle/         # Bundle analysis logic
+│   │   └── runtime/        # Runtime metrics logic
+│   ├── core/              # Configuration, storage, reporting
+│   ├── integrations/      # GitHub, GitLab, etc.
+│   └── templates/         # HTML/CSS templates
+├── dashboard/            # Next.js Dashboard
+│   ├── app/
+│   │   ├── api/           # API routes for real-time data
+│   │   ├── page.tsx       # Main dashboard
+│   │   └── treemap/       # Bundle treemap
+│   ├── components/
+│   │   ├── ui/            # shadcn/ui components
+│   │   ├── charts/        # Charts and visualizations
+│   │   └── layout/        # Header, Footer
+│   └── lib/               # Storage layer, utilities
+└── examples/             # Example Next.js apps
+```
+
+---
+
+## 🔗 Next.js Integration
+
+### ✅ App Router
+- Auto-detects routes from `app/` directory
+- Handles dynamic routes (`[id]`, `[...slug]`)
+- Excludes API routes and middleware automatically
+
+### ✅ Pages Router
+- Auto-detects routes from `pages/` directory
+- Supports all dynamic route patterns
+
+### 📋 Supported Frameworks
+| Framework | Status | Notes |
+|-----------|--------|-------|
+| Next.js App Router | ✅ Full | Auto-detection |
+| Next.js Pages Router | ✅ Full | Auto-detection |
+| Turbopack | 🔄 Planned | v2.0 roadmap |
+| React (CRA) | 🔄 Planned | v2.0 roadmap |
+| Vue 3 / Vite | 🔄 Planned | v2.0 roadmap |
+
+---
+
+## 🤖 CI/CD Setup
 
 ### GitHub Actions
 
 Create `.github/workflows/performance.yml`:
 
 ```yaml
-name: Performance Checks
+name: 🎯 Performance Checks
 
 on:
   pull_request:
@@ -176,117 +265,111 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Run performance checks
-        run: |
-          npx vantage check || true
+      - name: 🚀 Install Vantage
+        run: npm install -g vantage
+
+      - name: 🔍 Run performance checks
+        run: vantage check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: ${{ github.ref }}
           GITHUB_SHA: ${{ github.sha }}
 
-      - name: Post results to PR
+      - name: 💬 Post results to PR
         if: github.event_name == 'pull_request'
-          run: |
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
             node dist/integrations/github.js post-comment
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GITHUB_REPOSITORY: ${{ github.repository }}
-            GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
 
-      - name: Set status check
+      - name: ✅ Set status check
         if: github.event_name == 'pull_request'
-          run: |
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
             node dist/integrations/github.js set-status
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GITHUB_REPOSITORY: ${{ github.repository }}
-            GITHUB_SHA: ${{ github.sha }}
-
-      - name: Upload artifacts
-        if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: performance-results
-            path: .vantage/
-            retention-days: 30
 ```
 
-See [CI/CD Setup](docs/ci-setup.md) for detailed configuration.
+### GitLab CI (Coming v2.0)
 
-## Dashboard
+### Bitbucket Pipelines (Coming v2.0)
 
-### Local Development
+---
 
-```bash
-vantage dashboard
-```
+## 🎯 Roadmap
 
-Opens at http://localhost:3000
-
-### Deploy to GitHub Pages
-
-```bash
-vantage dashboard --deploy
-```
-
-Follow instructions to deploy your dashboard to GitHub Pages.
-
-## Examples
-
-See `examples/` directory for sample Next.js apps configured with Vantage.
-
-## Examples
-
-### Example Next.js App
-
-- Working Next.js 15 app with App Router
-- Sample home page component
-- Performance configuration
-- TypeScript + React configuration
-
-See [examples/nextjs-app/](examples/nextjs-app/README.md) for setup.
-
-## Contributing
-
-Contributions welcome! Please read [Contributing Guidelines](CONTRIBUTING.md).
-
-## Roadmap
-
-### v1.0 (Current)
-- [x] CLI foundation
-- [x] Bundle analysis
-- [x] Runtime metrics
-- [x] Dashboard with shadcn UI
+### ✅ v1.0 — Current Release
+- [x] CLI foundation with oclif
+- [x] Deep bundle analysis
+- [x] Runtime metrics with Lighthouse
+- [x] **Modern dashboard with shadcn/ui**
+- [x] **Dark mode support**
+- [x] **Real-time data integration**
+- [x] **Keyboard navigation & accessibility**
 - [x] GitHub Actions integration
-- [x] Comprehensive testing
-- [x] Complete documentation
-- [x] Example apps
+- [x] Comprehensive test coverage
+- [x] TypeScript throughout
 
-### v2.0 (Planned)
+### 🚀 v2.0 — Planned
 - [ ] Turbopack support
 - [ ] Visual regression tests (Playwright)
-- [ ] React (CRA + Vite) support
-- [ ] Vue 3 (Vite) support
+- [ ] React (Vite/CRA) support
+- [ ] Vue 3 (Nuxt/Vite) support
 - [ ] SvelteKit support
 - [ ] GitLab CI integration
 - [ ] Bitbucket Pipelines integration
-- [ ] Dashboard config editor via UI
-- [ ] GitLab CI integration
+- [ ] Dashboard config editor (UI)
+- [ ] Custom metric definitions
 
-## License
+---
 
-MIT © @tanRdev
+## 📚 Documentation
 
+- [Installation Guide](docs/installation.md)
+- [Configuration Reference](docs/configuration.md)
+- [Next.js Integration](docs/nextjs-guide.md)
+- [CI/CD Setup](docs/ci-setup.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md).
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT © [tanRdev](https://github.com/tanRdev)
+
+---
+
+<div align="center">
+
+  **Built with ❤️ using TypeScript, Next.js, and shadcn/ui**
+
+  ⭐ Star us on GitHub — [github.com/tanRdev/vantage](https://github.com/tanRdev/vantage)
+
+</div>

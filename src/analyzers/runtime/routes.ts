@@ -169,9 +169,13 @@ export class RouteDetector {
 
   private shouldExclude(route: string, excludePatterns: string[]): boolean {
     return excludePatterns.some(pattern => {
-      const regex = new RegExp(
-        "^" + pattern.replace(/\*/g, ".*").replace(/\//g, "\\/")
-      );
+      // Escape special regex characters to prevent ReDoS
+      // Order: escape special chars first, then convert * to .* glob pattern
+      let regexPattern = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')  // Escape special regex chars except *
+        .replace(/\*/g, '.*');                   // Convert glob * to .* (after escaping)
+
+      const regex = new RegExp('^' + regexPattern);
       return regex.test(route);
     });
   }

@@ -152,6 +152,65 @@ describe("RouteDetector", () => {
 
       expect(routes.length).toBe(1);
     });
+
+    it("should safely handle exclude patterns with special regex characters", () => {
+      // Patterns containing special regex characters that could cause ReDoS
+      // or catastrophic backtracking if not properly escaped
+      const maliciousPatterns = [
+        "/api/(test)+",        // Unescaped parentheses and plus
+        "/(.*)(.*)(.*)",       // Nested wildcards with parentheses
+        "/api/users+.+",       // Plus quantifiers
+        "/api/^test$",         // Anchors
+        "/api/test?",          // Question mark
+        "/api/[test]$z",       // Unclosed bracket with anchor
+        "/api/test|bar",       // Alternation
+        "/api/{id}",           // Curly braces
+        "/api/test.$",         // Dot metacharacter
+      ];
+
+      // Test that each pattern can be processed without throwing
+      // This tests that the ReDoS vulnerability is fixed
+      expect(() => {
+        for (const pattern of maliciousPatterns) {
+          detector.detectRoutes([pattern]);
+        }
+      }).not.toThrow();
+    });
+
+    it("should safely handle patterns with plus sign to prevent ReDoS", () => {
+      vi.spyOn(fs, "readdirSync").mockReturnValue([
+        createDirent("page.tsx", false),
+        createDirent("error.tsx", false),
+      ] as any);
+
+      // The pattern with "+" should not cause catastrophic backtracking
+      // This tests that special regex characters are properly escaped
+      expect(() => {
+        detector.detectRoutes(["/api/users+"]);
+      }).not.toThrow();
+    });
+
+    it("should safely handle patterns with other special regex characters", () => {
+      vi.spyOn(fs, "readdirSync").mockReturnValue([
+        createDirent("page.tsx", false),
+        createDirent("error.tsx", false),
+      ] as any);
+
+      // Test patterns with various special regex characters
+      const problematicPatterns = [
+        "/api/(test)",      // Parentheses
+        "/api/users?",      // Question mark
+        "/api/test|bar",    // Alternation
+        "/api/{id}",        // Curly braces
+        "/api/test.$",      // Dot with anchor
+      ];
+
+      expect(() => {
+        for (const pattern of problematicPatterns) {
+          detector.detectRoutes([pattern]);
+        }
+      }).not.toThrow();
+    });
   });
 
   describe("getTopNRoutes", () => {

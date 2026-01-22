@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // Removed "output: export" to enable API routes for real-time data
   trailingSlash: true,
   images: {
     unoptimized: true,

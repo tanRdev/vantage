@@ -127,6 +127,11 @@ export class LighthouseRunner {
       child.on("error", (error) => {
         reject(new Error(`Failed to spawn command: ${error.message}`));
       });
+
+      child.on("timeout", () => {
+        child.kill();
+        reject(new Error(`Command timed out after 120000ms`));
+      });
     });
   }
 

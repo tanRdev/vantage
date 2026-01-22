@@ -1,57 +1,117 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { DataTable } from '../data-table'
+import { api } from '@/lib/api-client'
+import type { Column } from '../data-table'
+import { Badge } from '../ui/badge'
+import { StatusIndicator } from '../ui/status-indicator'
+import { Loader2 } from 'lucide-react'
+
+export interface RouteMetric {
+  id: number
+  timestamp: number
+  branch: string
+  commit?: string
+  lcp?: number
+  inp?: number
+  cls?: number
+  fcp?: number
+  ttfb?: number
+  score?: number
+  status: 'pass' | 'warn' | 'fail'
+}
+
 export function RouteTable() {
-  const routes = [
-    { path: "/", lcp: 1.2, inp: 35, cls: 0.02, score: 95 },
-    { path: "/dashboard", lcp: 2.1, inp: 55, cls: 0.08, score: 88 },
-    { path: "/checkout", lcp: 1.8, inp: 40, cls: 0.03, score: 92 },
-    { path: "/about", lcp: 1.5, inp: 42, cls: 0.04, score: 94 },
-  ];
+  const [routes, setRoutes] = useState<RouteMetric[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.getRoutes({ limit: 20 })
+      .then((res) => {
+        if (res.success && res.data) {
+          setRoutes(res.data)
+        } else {
+          setError(res.error || 'Failed to load routes')
+        }
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        <p>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 text-primary hover:underline"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  const columns: Column<RouteMetric>[] = [
+    {
+      key: 'branch',
+      header: 'Branch',
+      render: (value) => <span className="font-mono text-sm">{value}</span>,
+    },
+    {
+      key: 'lcp',
+      header: 'LCP',
+      render: (value) => (value ? `${value.toFixed(1)}s` : '—'),
+    },
+    {
+      key: 'inp',
+      header: 'INP',
+      render: (value) => (value ? `${value.toFixed(0)}ms` : '—'),
+    },
+    {
+      key: 'cls',
+      header: 'CLS',
+      render: (value) => (value ? value.toFixed(3) : '—'),
+    },
+    {
+      key: 'score',
+      header: 'Score',
+      render: (value) => (value ? `${value.toFixed(0)}` : '—'),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => (
+        <StatusIndicator
+          status={value === 'pass' ? 'success' : value === 'warn' ? 'warning' : 'error'}
+          label={value === 'pass' ? 'OK' : value === 'warn' ? 'Warning' : 'Failed'}
+        />
+      ),
+    },
+    {
+      key: 'timestamp',
+      header: 'Date',
+      render: (value) => new Date(value).toLocaleDateString(),
+    },
+  ]
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">
-              Route
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">
-              LCP
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">
-              INP
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">
-              CLS
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">
-              Score
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {routes.map((route, index) => (
-            <tr key={index} className="border-b border-gray-100">
-              <td className="py-3 px-4 font-mono">{route.path}</td>
-              <td className="py-3 px-4">{route.lcp}s</td>
-              <td className="py-3 px-4">{route.inp}ms</td>
-              <td className="py-3 px-4">{route.cls}</td>
-              <td className="py-3 px-4">
-                <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      route.score >= 90
-                        ? "bg-green-100 text-green-800"
-                        : route.score >= 80
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                >
-                  {route.score}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+    <DataTable
+      data={routes}
+      columns={columns}
+      searchable
+      searchKeys={['branch', 'status']}
+      emptyMessage="No route data available. Run 'vantage check' to generate metrics."
+    />
+  )
 }

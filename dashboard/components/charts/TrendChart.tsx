@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   AreaChart,
@@ -8,51 +8,85 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts'
 
-export function TrendChart() {
-  const data = [
-    { date: "Jan 15", lcp: 2.1, inp: 60, cls: 0.08 },
-    { date: "Jan 16", lcp: 2.0, inp: 55, cls: 0.07 },
-    { date: "Jan 17", lcp: 1.9, inp: 50, cls: 0.06 },
-    { date: "Jan 18", lcp: 1.8, inp: 45, cls: 0.05 },
-    { date: "Jan 19", lcp: 1.7, inp: 40, cls: 0.04 },
-  ];
+interface TrendDataPoint {
+  timestamp: number
+  value: number
+  date?: string
+}
+
+interface TrendData {
+  lcp: TrendDataPoint[]
+  inp: TrendDataPoint[]
+  cls: TrendDataPoint[]
+}
+
+interface TrendChartProps {
+  data?: TrendData
+}
+
+export function TrendChart({ data }: TrendChartProps) {
+  // Combine all metrics into a single array for the chart
+  const chartData = data?.lcp?.length
+    ? data.lcp.map((item, index) => ({
+        date: item.date || new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        lcp: data.lcp[index]?.value || 0,
+        inp: (data.inp[index]?.value || 0) / 100, // Convert ms to s for display
+        cls: data.cls[index]?.value || 0,
+      }))
+    : [
+        { date: 'No data', lcp: 0, inp: 0, cls: 0 },
+      ]
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full h-80" role="img" aria-label="Performance trends chart showing LCP, INP, and CLS over time">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
+        <AreaChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <XAxis
+            dataKey="date"
+            className="text-xs"
+            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+          />
+          <YAxis
+            className="text-xs"
+            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '8px',
+            }}
+            itemStyle={{ color: 'hsl(var(--foreground))' }}
+          />
           <Area
             type="monotone"
             dataKey="lcp"
-            stroke="#3b82f6"
-            fill="#3b82f6"
-            fillOpacity={0.3}
+            stroke="hsl(var(--primary))"
+            fill="hsl(var(--primary))"
+            fillOpacity={0.2}
             name="LCP (s)"
           />
           <Area
             type="monotone"
             dataKey="inp"
-            stroke="#10b981"
-            fill="#10b981"
-            fillOpacity={0.3}
-            name="INP (ms)"
+            stroke="hsl(var(--success))"
+            fill="hsl(var(--success))"
+            fillOpacity={0.2}
+            name="INP (s)"
           />
           <Area
             type="monotone"
             dataKey="cls"
-            stroke="#8b5cf6"
-            fill="#8b5cf6"
-            fillOpacity={0.3}
+            stroke="hsl(var(--warning))"
+            fill="hsl(var(--warning))"
+            fillOpacity={0.2}
             name="CLS"
           />
         </AreaChart>
       </ResponsiveContainer>
     </div>
-  );
+  )
 }

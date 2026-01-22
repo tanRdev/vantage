@@ -183,21 +183,39 @@ export class GitHubIntegration {
 
   async findExistingComment(prNumber: number): Promise<number | null> {
     try {
-      const { data: comments } = await this.octokit.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: prNumber,
-        per_page: 100,
-      });
+      let page = 1;
+      const perPage = 100;
 
-      const botComment = comments.find((comment) => {
-        const user = comment.user as { type?: string } | undefined;
-        return user?.type === "Bot" &&
-          typeof comment.body === "string" &&
-          comment.body.includes("## Performance Results");
-      });
+      while (true) {
+        const response = await this.octokit.rest.issues.listComments({
+          owner: this.owner,
+          repo: this.repo,
+          issue_number: prNumber,
+          per_page: perPage,
+          page,
+        });
 
-      return botComment?.id || null;
+        const comments = response.data;
+
+        const botComment = comments.find((comment) => {
+          const user = comment.user as { type?: string } | undefined;
+          return user?.type === "Bot" &&
+            typeof comment.body === "string" &&
+            comment.body.includes("## Performance Results");
+        });
+
+        if (botComment) {
+          return botComment.id;
+        }
+
+        if (comments.length < perPage) {
+          break;
+        }
+
+        page++;
+      }
+
+      return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Reporter.error(`Failed to find existing comment: ${errorMessage}`);

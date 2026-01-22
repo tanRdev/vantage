@@ -37,7 +37,7 @@ function getFsMocks() {
 describe("GitHubIntegration", () => {
   let integration: GitHubIntegration;
 
-  const mockToken = "ghp_test_token";
+  const mockToken = "ghp_test_token_that_is_long_enough_to_pass_validation_123";
   const mockRepository = "owner/repo";
 
   beforeEach(() => {
@@ -226,6 +226,135 @@ describe("GitHubIntegration", () => {
       const commentId = await integration.findExistingComment(1);
 
       expect(commentId).toBeNull();
+    });
+
+    describe("pagination", () => {
+      it("should fetch all pages when comments span multiple pages", async () => {
+        const mockCommentsPage1 = Array.from({ length: 100 }, (_, i) => ({
+          id: i + 1,
+          user: { type: "User" },
+          body: `Comment ${i + 1}`,
+        }));
+
+        const botComment = {
+          id: 123,
+          user: {
+            type: "Bot",
+          },
+          body: "## Performance Results\n\nAll checks passed",
+        };
+
+        const mockCommentsPage2 = [botComment];
+
+        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+
+        // Reset the mock to clear the default implementation
+        listCommentsMock.mockReset();
+
+        // First call returns 100 comments (full page)
+        listCommentsMock
+          .mockResolvedValueOnce({ data: mockCommentsPage1 })
+          // Second call returns the bot comment
+          .mockResolvedValueOnce({ data: mockCommentsPage2 });
+
+        const commentId = await integration.findExistingComment(1);
+
+        expect(commentId).toBe(123);
+        expect(listCommentsMock).toHaveBeenCalledTimes(2);
+        expect(listCommentsMock).toHaveBeenNthCalledWith(1, {
+          owner: "owner",
+          repo: "repo",
+          issue_number: 1,
+          per_page: 100,
+          page: 1,
+        });
+        expect(listCommentsMock).toHaveBeenNthCalledWith(2, {
+          owner: "owner",
+          repo: "repo",
+          issue_number: 1,
+          per_page: 100,
+          page: 2,
+        });
+      });
+
+      it("should stop pagination when receiving less than per_page", async () => {
+        const mockComments = Array.from({ length: 50 }, (_, i) => ({
+          id: i + 1,
+          user: { type: "User" },
+          body: `Comment ${i + 1}`,
+        }));
+
+        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        listCommentsMock.mockReset();
+        listCommentsMock.mockResolvedValue({ data: mockComments });
+
+        const commentId = await integration.findExistingComment(1);
+
+        expect(commentId).toBeNull();
+        // Should only call once since we got less than 100 comments
+        expect(listCommentsMock).toHaveBeenCalledTimes(1);
+      });
+
+      it("should find bot comment on third page", async () => {
+        const mockCommentsPage1 = Array.from({ length: 100 }, (_, i) => ({
+          id: i + 1,
+          user: { type: "User" },
+          body: `Comment ${i + 1}`,
+        }));
+
+        const mockCommentsPage2 = Array.from({ length: 100 }, (_, i) => ({
+          id: i + 101,
+          user: { type: "User" },
+          body: `Comment ${i + 101}`,
+        }));
+
+        const botComment = {
+          id: 999,
+          user: {
+            type: "Bot",
+          },
+          body: "## Performance Results\n\nAll checks passed",
+        };
+
+        const mockCommentsPage3 = [botComment];
+
+        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        listCommentsMock.mockReset();
+        listCommentsMock
+          .mockResolvedValueOnce({ data: mockCommentsPage1 })
+          .mockResolvedValueOnce({ data: mockCommentsPage2 })
+          .mockResolvedValueOnce({ data: mockCommentsPage3 });
+
+        const commentId = await integration.findExistingComment(1);
+
+        expect(commentId).toBe(999);
+        expect(listCommentsMock).toHaveBeenCalledTimes(3);
+      });
+
+      it("should return null after checking all pages without finding bot comment", async () => {
+        const mockCommentsPage1 = Array.from({ length: 100 }, (_, i) => ({
+          id: i + 1,
+          user: { type: "User" },
+          body: `Comment ${i + 1}`,
+        }));
+
+        const mockCommentsPage2 = Array.from({ length: 50 }, (_, i) => ({
+          id: i + 101,
+          user: { type: "User" },
+          body: `Comment ${i + 101}`,
+        }));
+
+        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        listCommentsMock.mockReset();
+        listCommentsMock
+          .mockResolvedValueOnce({ data: mockCommentsPage1 })
+          .mockResolvedValueOnce({ data: mockCommentsPage2 });
+
+        const commentId = await integration.findExistingComment(1);
+
+        expect(commentId).toBeNull();
+        expect(listCommentsMock).toHaveBeenCalledTimes(2);
+      });
     });
   });
 

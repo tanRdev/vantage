@@ -1,11 +1,19 @@
 import { Command } from "@oclif/core";
 import * as path from "path";
 import * as fs from "fs";
+import type { ChildProcess } from "child_process";
 import Reporter from "../core/reporter.js";
 
 export default class Dashboard extends Command {
   static description = "Launch performance dashboard";
   static id = "dashboard";
+
+  /**
+   * Track the active SIGINT handler to prevent accumulation on restart.
+   * Stored as a static property to persist across command invocations.
+   */
+  private static sigintHandler: (() => void) | null = null;
+  private static dashboardProcess: ChildProcess | null = null;
 
   async run(): Promise<void> {
     const args = process.argv.slice(2);
@@ -68,16 +76,29 @@ export default class Dashboard extends Command {
           stdio: "inherit",
         });
 
+        // Store reference for cleanup
+        Dashboard.dashboardProcess = dev;
+
         dev.on("error", (error: Error) => {
           Reporter.error("Failed to start dashboard", error);
           process.exit(1);
         });
 
-        process.on("SIGINT", () => {
+        // Remove any existing handler to prevent accumulation on restart
+        if (Dashboard.sigintHandler) {
+          process.removeListener("SIGINT", Dashboard.sigintHandler);
+        }
+
+        // Create and register the new handler
+        Dashboard.sigintHandler = () => {
           Reporter.info("Stopping dashboard...");
           dev.kill();
+          Dashboard.dashboardProcess = null;
+          Dashboard.sigintHandler = null;
           process.exit(0);
-        });
+        };
+
+        process.on("SIGINT", Dashboard.sigintHandler);
 
       } catch (error) {
         Reporter.error("Failed to start dashboard", error as Error);

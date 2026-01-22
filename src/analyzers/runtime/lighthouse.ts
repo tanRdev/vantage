@@ -140,11 +140,16 @@ export class LighthouseRunner {
 
     const medianIndex = Math.floor(results.length / 2);
 
+    // Helper to get optional metric (returns undefined if no values)
+    const getOptionalMetric = (values: number[]): number | undefined => {
+      return values.length > 0 ? values[medianIndex] : undefined;
+    };
+
     return {
       url,
       score: scores[medianIndex] || 0,
       lcp: lcps[medianIndex] || 0,
-      inp: inps[medianIndex] || 0,
+      inp: getOptionalMetric(inps),
       cls: clsValues[medianIndex] || 0,
       tbt: tbts[medianIndex] || 0,
       fcp: fcps[medianIndex] || 0,

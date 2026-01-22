@@ -3,6 +3,35 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 
+const SHUTDOWN_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const;
+type ShutdownSignal = (typeof SHUTDOWN_SIGNALS)[number];
+
+// Valid metric column names for getRuntimeTrend - using a readonly Set for O(1) lookup
+const VALID_RUNTIME_METRICS = new Set([
+  "lcp",
+  "inp",
+  "cls",
+  "fcp",
+  "ttfb",
+  "score",
+] as const);
+
+type ValidRuntimeMetric = "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score";
+
+/**
+ * Validates that a metric name is a valid column name for runtime trend queries.
+ * Throws an error if the metric name is not in the allowlist.
+ * @param metric - The metric name to validate
+ * @throws {Error} If the metric name is not in the allowlist
+ */
+function validateMetricColumn(metric: string): asserts metric is ValidRuntimeMetric {
+  if (!VALID_RUNTIME_METRICS.has(metric as ValidRuntimeMetric)) {
+    throw new Error(
+      `Invalid metric: "${metric}". Must be one of: lcp, inp, cls, fcp, ttfb, score`
+    );
+  }
+}
+
 export interface RuntimeMetricRecord {
   id: number;
   timestamp: number;
@@ -42,6 +71,8 @@ export interface CheckRecord {
 export class Storage {
   private db: Database.Database;
   private dbPath: string;
+  private cleanupHandlers: (() => void)[] = [];
+  private isClosed: boolean = false;
 
   constructor(storagePath?: string) {
     const storageDir = storagePath || path.join(os.homedir(), ".vantage");
@@ -55,6 +86,40 @@ export class Storage {
 
     this.db.pragma("journal_mode = WAL");
     this.initSchema();
+    this.registerCleanupHandlers();
+  }
+
+  private registerCleanupHandlers(): void {
+    const cleanup = () => {
+      if (!this.isClosed) {
+        try {
+          this.close();
+        } catch {
+          // Ignore errors during shutdown cleanup
+        }
+      }
+    };
+
+    for (const signal of SHUTDOWN_SIGNALS) {
+      if (process.listenerCount(signal) === 0) {
+        const handler = () => {
+          cleanup();
+          process.exit(0);
+        };
+        process.on(signal, handler);
+        this.cleanupHandlers.push(() => process.off(signal, handler));
+      }
+    }
+
+    process.on("beforeExit", cleanup);
+    this.cleanupHandlers.push(() => process.off("beforeExit", cleanup));
+  }
+
+  private unregisterCleanupHandlers(): void {
+    for (const unregister of this.cleanupHandlers) {
+      unregister();
+    }
+    this.cleanupHandlers = [];
   }
 
   private initSchema(): void {
@@ -63,7 +128,7 @@ export class Storage {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp INTEGER NOT NULL,
         branch TEXT NOT NULL DEFAULT 'main',
-        commit TEXT,
+        "commit" TEXT,
         lcp REAL,
         inp REAL,
         cls REAL,
@@ -78,7 +143,7 @@ export class Storage {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp INTEGER NOT NULL,
         branch TEXT NOT NULL DEFAULT 'main',
-        commit TEXT,
+        "commit" TEXT,
         chunk_name TEXT NOT NULL,
         old_size REAL,
         new_size REAL NOT NULL,
@@ -91,7 +156,7 @@ export class Storage {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp INTEGER NOT NULL,
         branch TEXT NOT NULL DEFAULT 'main',
-        commit TEXT,
+        "commit" TEXT,
         check_type TEXT NOT NULL,
         status TEXT NOT NULL,
         duration INTEGER NOT NULL,
@@ -111,7 +176,7 @@ export class Storage {
     metrics: Omit<RuntimeMetricRecord, "id">[]
   ): void {
     const stmt = this.db.prepare(`
-      INSERT INTO runtime_metrics (timestamp, branch, commit, lcp, inp, cls, fcp, ttfb, score, status)
+      INSERT INTO runtime_metrics (timestamp, branch, "commit", lcp, inp, cls, fcp, ttfb, score, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -139,7 +204,7 @@ export class Storage {
     metrics: Omit<BundleMetricRecord, "id">[]
   ): void {
     const stmt = this.db.prepare(`
-      INSERT INTO bundle_metrics (timestamp, branch, commit, chunk_name, old_size, new_size, delta, status)
+      INSERT INTO bundle_metrics (timestamp, branch, "commit", chunk_name, old_size, new_size, delta, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -165,7 +230,7 @@ export class Storage {
     record: Omit<CheckRecord, "id">
   ): void {
     const stmt = this.db.prepare(`
-      INSERT INTO check_records (timestamp, branch, commit, check_type, status, duration)
+      INSERT INTO check_records (timestamp, branch, "commit", check_type, status, duration)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
@@ -272,6 +337,10 @@ export class Storage {
     metric: keyof Pick<RuntimeMetricRecord, "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score">,
     limit: number = 30
   ): Array<{ timestamp: number; value: number }> {
+    // Validate the metric column name at runtime to prevent SQL injection
+    validateMetricColumn(metric);
+
+    // After validation, it's safe to interpolate the metric name
     const stmt = this.db.prepare(`
       SELECT timestamp, ${metric} as value FROM runtime_metrics
       WHERE branch = ? AND ${metric} IS NOT NULL
@@ -314,7 +383,12 @@ export class Storage {
   }
 
   close(): void {
+    if (this.isClosed) {
+      return;
+    }
+    this.unregisterCleanupHandlers();
     this.db.close();
+    this.isClosed = true;
   }
 
   getStats(): {

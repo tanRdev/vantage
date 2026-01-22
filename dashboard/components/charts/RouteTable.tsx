@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { DataTable } from '../data-table'
 import { api } from '@/lib/api-client'
 import type { Column } from '../data-table'
-import { Badge } from '../ui/badge'
 import { StatusIndicator } from '../ui/status-indicator'
 import { Loader2 } from 'lucide-react'
+import { MonoText } from '../ui/mono-text'
+import { cn } from '@/lib/utils'
 
 export interface RouteMetric {
   id: number
@@ -43,7 +44,7 @@ export function RouteTable() {
   if (isLoading) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" strokeWidth={1.5} />
       </div>
     )
   }
@@ -51,57 +52,72 @@ export function RouteTable() {
   if (error) {
     return (
       <div className="text-center text-muted-foreground py-8">
-        <p>{error}</p>
+        <MonoText className="text-xs">{error}</MonoText>
         <button
           onClick={() => window.location.reload()}
-          className="mt-2 text-primary hover:underline"
+          className="mt-2 text-status-purple hover:underline text-xs"
         >
-          Retry
+          RETRY
         </button>
       </div>
     )
   }
 
+  const getScoreStatus = (score: number | undefined) => {
+    if (!score) return 'neutral'
+    if (score >= 90) return 'success'
+    if (score >= 50) return 'warning'
+    return 'error'
+  }
+
   const columns: Column<RouteMetric>[] = [
     {
       key: 'branch',
-      header: 'Branch',
-      render: (value) => <span className="font-mono text-sm">{value}</span>,
+      header: 'BRANCH',
+      render: (value) => <MonoText as="span" className="text-sm">{value}</MonoText>,
     },
     {
       key: 'lcp',
       header: 'LCP',
-      render: (value) => (value ? `${value.toFixed(1)}s` : '—'),
+      render: (value) => <MonoText className="tabular-nums">{value ? `${value.toFixed(1)}S` : '—'}</MonoText>,
     },
     {
       key: 'inp',
       header: 'INP',
-      render: (value) => (value ? `${value.toFixed(0)}ms` : '—'),
+      render: (value) => <MonoText className="tabular-nums">{value ? `${value.toFixed(0)}MS` : '—'}</MonoText>,
     },
     {
       key: 'cls',
       header: 'CLS',
-      render: (value) => (value ? value.toFixed(3) : '—'),
+      render: (value) => <MonoText className="tabular-nums">{value ? value.toFixed(3) : '—'}</MonoText>,
     },
     {
       key: 'score',
-      header: 'Score',
-      render: (value) => (value ? `${value.toFixed(0)}` : '—'),
+      header: 'SCORE',
+      render: (value) => {
+        const status = getScoreStatus(value)
+        const statusMap = { success: 'text-status-success', warning: 'text-status-warning', error: 'text-status-critical', neutral: 'text-muted-foreground' }
+        return (
+          <MonoText className={cn('tabular-nums', statusMap[status as keyof typeof statusMap])}>
+            {value ? `${value.toFixed(0)}` : '—'}
+          </MonoText>
+        )
+      },
     },
     {
       key: 'status',
-      header: 'Status',
+      header: 'STATUS',
       render: (value) => (
         <StatusIndicator
           status={value === 'pass' ? 'success' : value === 'warn' ? 'warning' : 'error'}
-          label={value === 'pass' ? 'OK' : value === 'warn' ? 'Warning' : 'Failed'}
+          label={value === 'pass' ? 'OK' : value === 'warn' ? 'WARN' : 'FAIL'}
         />
       ),
     },
     {
       key: 'timestamp',
-      header: 'Date',
-      render: (value) => new Date(value).toLocaleDateString(),
+      header: 'DATE',
+      render: (value) => <MonoText className="text-xs">{new Date(Number(value)).toLocaleDateString()}</MonoText>,
     },
   ]
 
@@ -111,7 +127,7 @@ export function RouteTable() {
       columns={columns}
       searchable
       searchKeys={['branch', 'status']}
-      emptyMessage="No route data available. Run 'vantage check' to generate metrics."
+      emptyMessage="NO ROUTE DATA AVAILABLE. RUN 'VANTAGE CHECK' TO GENERATE METRICS."
     />
   )
 }

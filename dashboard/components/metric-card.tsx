@@ -1,7 +1,8 @@
 'use client'
 
 import { Card, CardContent } from './ui/card'
-import { Badge } from './ui/badge'
+import { StatusPill } from './ui/status-pill'
+import { MonoText } from './ui/mono-text'
 import { cn } from '@/lib/utils'
 import { LucideIcon } from 'lucide-react'
 
@@ -14,9 +15,17 @@ interface MetricCardProps {
     value: number
     isPositive: boolean
   }
-  status?: 'success' | 'warning' | 'error' | 'neutral'
+  status?: 'success' | 'warning' | 'critical' | 'purple' | 'neutral'
   className?: string
 }
+
+const statusGlowMap = {
+  success: 'glow-success',
+  warning: 'glow-warning',
+  critical: 'glow-critical',
+  purple: 'glow-purple',
+  neutral: '',
+} as const
 
 export function MetricCard({
   label,
@@ -27,41 +36,50 @@ export function MetricCard({
   status = 'neutral',
   className,
 }: MetricCardProps) {
-  const statusColors = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    error: 'bg-error/10 text-error border-error/20',
-    neutral: 'bg-muted text-muted-foreground border-border',
-  }
+  const glowClass = statusGlowMap[status]
 
   return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-muted-foreground">{label}</span>
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold">{value}</span>
-          {unit && <span className="text-sm text-muted-foreground">{unit}</span>}
-        </div>
-        {trend && (
-          <div
-            className={cn(
-              'mt-2 text-xs font-medium',
-              trend.isPositive ? 'text-success' : 'text-error'
-            )}
-          >
-            {trend.isPositive ? '↓' : '↑'} {Math.abs(trend.value)}% from last week
+    <Card className={cn('relative overflow-hidden', glowClass, className)}>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <MonoText as="p" className="text-xs text-muted-foreground mb-0.5">
+              {label}
+            </MonoText>
           </div>
-        )}
-        {status && status !== 'neutral' && (
-          <Badge
-            variant={status === 'success' ? 'success' : status === 'warning' ? 'warning' : 'destructive'}
-            className="absolute top-4 right-4"
-          >
-            {status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {Icon && (
+              <Icon className="h-4 w-4 text-muted-foreground/70" strokeWidth={1.5} />
+            )}
+            <StatusPill status={status} />
+          </div>
+        </div>
+
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold tabular-nums tracking-tight">
+            {value}
+          </span>
+          {unit && (
+            <MonoText as="span" className="text-xs text-muted-foreground">
+              {unit}
+            </MonoText>
+          )}
+        </div>
+
+        {trend && (
+          <div className="mt-2 flex items-center gap-1.5">
+            <span
+              className={cn(
+                'text-xs font-medium tabular-nums',
+                trend.isPositive ? 'text-status-success' : 'text-status-critical'
+              )}
+            >
+              {trend.isPositive ? '↓' : '↑'} {Math.abs(trend.value)}%
+            </span>
+            <MonoText as="span" className="text-xs text-muted-foreground/70">
+              FROM LAST
+            </MonoText>
+          </div>
         )}
       </CardContent>
     </Card>

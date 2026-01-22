@@ -3,6 +3,7 @@
 import { Button } from './ui/button'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
+import { MonoText } from './ui/mono-text'
 
 interface ExportButtonProps {
   data: unknown[]
@@ -21,7 +22,6 @@ export function ExportButton({
     setIsExporting(true)
     try {
       if (format === 'csv') {
-        // Convert to CSV
         if (data.length === 0) return
 
         const headers = Object.keys(data[0] as object)
@@ -30,7 +30,6 @@ export function ExportButton({
           ...data.map((row) =>
             headers.map((header) => {
               const value = (row as Record<string, unknown>)[header]
-              // Handle values that contain commas or quotes
               const stringValue = String(value ?? '')
               if (stringValue.includes(',') || stringValue.includes('"')) {
                 return `"${stringValue.replace(/"/g, '""')}"`
@@ -48,7 +47,6 @@ export function ExportButton({
         a.click()
         URL.revokeObjectURL(url)
       } else {
-        // Export as JSON
         const jsonContent = JSON.stringify(data, null, 2)
         const blob = new Blob([jsonContent], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -65,13 +63,13 @@ export function ExportButton({
 
   return (
     <Button
-      variant="outline"
+      variant="glass"
       size="sm"
       onClick={handleExport}
       disabled={isExporting || data.length === 0}
     >
-      <Download className="h-4 w-4 mr-2" />
-      Export {format.toUpperCase()}
+      <Download className="h-4 w-4" strokeWidth={1.5} />
+      <MonoText>EXPORT {format.toUpperCase()}</MonoText>
     </Button>
   )
 }

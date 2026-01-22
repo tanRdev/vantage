@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Loader2 } from 'lucide-react'
+import { MonoText } from '../ui/mono-text'
 
 export interface BundleTrendDataPoint {
   timestamp: number
@@ -21,14 +22,14 @@ interface BundleTrendChartProps {
 }
 
 const COLORS = [
+  'hsl(var(--status-purple))',
+  'hsl(var(--status-success))',
+  'hsl(var(--status-warning))',
   'hsl(var(--primary))',
-  'hsl(var(--success))',
-  'hsl(var(--warning))',
-  'hsl(var(--chart-1, 250 100% 60%))',
-  'hsl(var(--chart-2, 200 100% 60%))',
-  'hsl(var(--chart-3, 150 100% 60%))',
-  'hsl(var(--chart-4, 300 100% 60%))',
-  'hsl(var(--chart-5, 25 100% 60%))',
+  'hsl(280 80% 60%)',
+  'hsl(180 80% 50%)',
+  'hsl(320 80% 60%)',
+  'hsl(40 94% 55%)',
 ]
 
 function formatBytes(bytes: number): string {
@@ -44,11 +45,11 @@ export function BundleTrendChart({ data, isLoading, error }: BundleTrendChartPro
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Bundle Size Trends</CardTitle>
+          <CardTitle>BUNDLE SIZE TRENDS</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" strokeWidth={1.5} />
           </div>
         </CardContent>
       </Card>
@@ -59,11 +60,11 @@ export function BundleTrendChart({ data, isLoading, error }: BundleTrendChartPro
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Bundle Size Trends</CardTitle>
+          <CardTitle>BUNDLE SIZE TRENDS</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center text-muted-foreground">
-            <p>{error}</p>
+            <MonoText className="text-xs">{error}</MonoText>
           </div>
         </CardContent>
       </Card>
@@ -74,11 +75,11 @@ export function BundleTrendChart({ data, isLoading, error }: BundleTrendChartPro
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Bundle Size Trends</CardTitle>
+          <CardTitle>BUNDLE SIZE TRENDS</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center text-muted-foreground">
-            <p>No bundle trend data available. Run metrics collection to see trends.</p>
+            <MonoText className="text-xs">NO BUNDLE TREND DATA AVAILABLE. RUN METRICS COLLECTION TO SEE TRENDS.</MonoText>
           </div>
         </CardContent>
       </Card>
@@ -122,35 +123,40 @@ export function BundleTrendChart({ data, isLoading, error }: BundleTrendChartPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Bundle Size Trends (Top 5 Chunks)</CardTitle>
+        <CardTitle>BUNDLE SIZE TRENDS (TOP 5 CHUNKS)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="w-full h-80" role="img" aria-label="Bundle size trends chart showing chunk sizes over time">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
               <XAxis
                 dataKey="date"
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'hsl(var(--text-tertiary))', fontSize: 11 }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'hsl(var(--text-tertiary))', fontSize: 11 }}
                 tickFormatter={formatBytes}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
+                  backgroundColor: 'hsl(var(--card) / 0.9)',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
+                  backdropFilter: 'blur(8px)',
+                  color: 'hsl(var(--text-primary))',
                 }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--text-primary))' }}
+                labelStyle={{ color: 'hsl(var(--text-secondary))' }}
                 formatter={(value: number) => formatBytes(value)}
-                labelFormatter={(label) => `Date: ${label}`}
+                labelFormatter={(label) => `DATE: ${label}`}
               />
               <Legend
-                wrapperStyle={{ fontSize: '12px' }}
+                wrapperStyle={{ fontSize: '11px' }}
                 iconType="line"
               />
               {topChunks.map((chunk, index) => (

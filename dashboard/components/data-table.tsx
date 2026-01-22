@@ -13,6 +13,7 @@ import { Input } from './ui/input'
 import { StatusIndicator } from './ui/status-indicator'
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MonoText } from './ui/mono-text'
 
 export interface Column<T> {
   key: string
@@ -63,19 +64,19 @@ export function DataTable<T extends Record<string, any>>({
     <div className={cn('space-y-4', className)}>
       {searchable && searchKeys && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
           <Input
-            placeholder="Search..."
+            placeholder="SEARCH..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 bg-card/40 border-border/50 text-all-caps-tight"
           />
         </div>
       )}
-      <div className="rounded-md border">
+      <div className="rounded-lg border border-border/50 bg-card/30 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-card/40">
               {columns.map((column) => (
                 <TableHead key={column.key} className={column.className}>
                   {column.header}
@@ -90,7 +91,7 @@ export function DataTable<T extends Record<string, any>>({
                   colSpan={columns.length}
                   className="text-center text-muted-foreground py-8"
                 >
-                  {searchQuery ? 'No results found' : emptyMessage}
+                  <MonoText className="text-xs">{searchQuery ? 'NO RESULTS FOUND' : emptyMessage}</MonoText>
                 </TableCell>
               </TableRow>
             ) : (
@@ -117,8 +118,10 @@ export function DataTable<T extends Record<string, any>>({
         </Table>
       </div>
       {filteredData.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          Showing {filteredData.length} of {data.length} items
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <MonoText className="text-xs">
+            SHOWING {filteredData.length} OF {data.length} ITEMS
+          </MonoText>
         </div>
       )}
     </div>

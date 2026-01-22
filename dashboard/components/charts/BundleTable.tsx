@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { DataTable } from '../data-table'
 import { api } from '@/lib/api-client'
 import type { Column } from '../data-table'
-import { Badge } from '../ui/badge'
 import { StatusIndicator } from '../ui/status-indicator'
 import { Loader2 } from 'lucide-react'
+import { MonoText } from '../ui/mono-text'
+import { cn } from '@/lib/utils'
 
 export interface BundleMetric {
   id: number
@@ -41,7 +42,7 @@ export function BundleTable() {
   if (isLoading) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" strokeWidth={1.5} />
       </div>
     )
   }
@@ -49,12 +50,12 @@ export function BundleTable() {
   if (error) {
     return (
       <div className="text-center text-muted-foreground py-8">
-        <p>{error}</p>
+        <MonoText className="text-xs">{error}</MonoText>
         <button
           onClick={() => window.location.reload()}
-          className="mt-2 text-primary hover:underline"
+          className="mt-2 text-status-purple hover:underline text-xs"
         >
-          Retry
+          RETRY
         </button>
       </div>
     )
@@ -63,45 +64,51 @@ export function BundleTable() {
   const columns: Column<BundleMetric>[] = [
     {
       key: 'chunkName',
-      header: 'Chunk',
-      render: (value) => <span className="font-mono text-sm">{value}</span>,
+      header: 'CHUNK',
+      render: (value) => <MonoText as="span" className="text-sm">{value}</MonoText>,
     },
     {
       key: 'newSize',
-      header: 'Size',
-      render: (value) => `${Math.round(value / 1024)}KB`,
-    },
-    {
-      key: 'delta',
-      header: 'Delta',
+      header: 'SIZE',
       render: (value) => (
-        <span
-          className={
-            value > 0
-              ? 'text-error'
-              : value < 0
-              ? 'text-success'
-              : 'text-muted-foreground'
-          }
-        >
-          {value > 0 ? '+' : ''}{Math.round(value / 1024)}KB
-        </span>
+        <MonoText className="tabular-nums">{Math.round(Number(value) / 1024)}KB</MonoText>
       ),
     },
     {
+      key: 'delta',
+      header: 'DELTA',
+      render: (value) => {
+        const numValue = Number(value)
+        return (
+          <MonoText
+            className={cn(
+              'tabular-nums',
+              numValue > 0
+                ? 'text-status-critical'
+                : numValue < 0
+                ? 'text-status-success'
+                : 'text-muted-foreground'
+            )}
+          >
+            {numValue > 0 ? '+' : ''}{Math.round(numValue / 1024)}KB
+          </MonoText>
+        )
+      },
+    },
+    {
       key: 'status',
-      header: 'Status',
+      header: 'STATUS',
       render: (value) => (
         <StatusIndicator
           status={value === 'pass' ? 'success' : value === 'warn' ? 'warning' : 'error'}
-          label={value === 'pass' ? 'OK' : value === 'warn' ? 'Warning' : 'Failed'}
+          label={value === 'pass' ? 'OK' : value === 'warn' ? 'WARN' : 'FAIL'}
         />
       ),
     },
     {
       key: 'timestamp',
-      header: 'Date',
-      render: (value) => new Date(value).toLocaleDateString(),
+      header: 'DATE',
+      render: (value) => <MonoText className="text-xs">{new Date(Number(value)).toLocaleDateString()}</MonoText>,
     },
   ]
 
@@ -111,7 +118,7 @@ export function BundleTable() {
       columns={columns}
       searchable
       searchKeys={['chunkName', 'status']}
-      emptyMessage="No bundle data available. Run 'vantage check' to generate metrics."
+      emptyMessage="NO BUNDLE DATA AVAILABLE. RUN 'VANTAGE CHECK' TO GENERATE METRICS."
     />
   )
 }

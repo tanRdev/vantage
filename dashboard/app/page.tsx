@@ -12,6 +12,7 @@ import { api } from '@/lib/api-client'
 import { DataLoader } from '../components/data-loader'
 import { ExportButton } from '../components/export-button'
 import { RefreshCw } from 'lucide-react'
+import { MonoText } from '../components/ui/mono-text'
 import type { BundleTrendDataPoint } from '@/types/api'
 
 interface TrendData {
@@ -69,7 +70,7 @@ export default function Home() {
 
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data')
+      setError(err instanceof Error ? err.message : 'FAILED TO LOAD DATA')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -81,25 +82,25 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Performance Dashboard
+          <h1 className="text-2xl font-bold tracking-tight text-all-caps-tight">
+            PERFORMANCE DASHBOARD
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor your application&apos;s performance and bundle size over time
-          </p>
+          <MonoText className="text-muted-foreground mt-1 text-xs">
+            MONITOR YOUR APPLICATION&apos;S PERFORMANCE AND BUNDLE SIZE OVER TIME
+          </MonoText>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchData(true)}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-card/60 backdrop-blur-md border border-border/50 hover:bg-card/80 transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+            <MonoText>REFRESH</MonoText>
           </button>
         </div>
       </div>
@@ -113,8 +114,8 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-muted rounded" />
+                <CardContent className="p-5">
+                  <div className="h-20 bg-muted/50 rounded" />
                 </CardContent>
               </Card>
             ))}
@@ -123,19 +124,19 @@ export default function Home() {
       >
         {(statsData) => {
           const lcpStatus = statsData.lcp != null
-            ? statsData.lcp < 2.5 ? 'success' : statsData.lcp < 4 ? 'warning' : 'error'
+            ? statsData.lcp < 2.5 ? 'success' : statsData.lcp < 4 ? 'warning' : 'critical'
             : undefined
 
           const inpStatus = statsData.inp != null
-            ? statsData.inp < 200 ? 'success' : statsData.inp < 500 ? 'warning' : 'error'
+            ? statsData.inp < 200 ? 'success' : statsData.inp < 500 ? 'warning' : 'critical'
             : undefined
 
           const clsStatus = statsData.cls != null
-            ? statsData.cls < 0.1 ? 'success' : statsData.cls < 0.25 ? 'warning' : 'error'
+            ? statsData.cls < 0.1 ? 'success' : statsData.cls < 0.25 ? 'warning' : 'critical'
             : undefined
 
           const bundleStatus = statsData.bundle != null
-            ? statsData.bundle < 200 * 1024 ? 'success' : statsData.bundle < 500 * 1024 ? 'warning' : 'error'
+            ? statsData.bundle < 200 * 1024 ? 'success' : statsData.bundle < 500 * 1024 ? 'warning' : 'critical'
             : undefined
 
           return (
@@ -173,11 +174,11 @@ export default function Home() {
       </DataLoader>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Performance Trends */}
         <Card className="col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Performance Trends</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle>PERFORMANCE TRENDS</CardTitle>
           </CardHeader>
           <CardContent>
             <DataLoader
@@ -186,7 +187,7 @@ export default function Home() {
               isLoading={isLoading}
               loadingComponent={
                 <div className="h-80 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" strokeWidth={1.5} />
                 </div>
               }
             >
@@ -197,8 +198,8 @@ export default function Home() {
 
         {/* Bundle Analysis */}
         <Card className="col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Bundle Analysis</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle>BUNDLE ANALYSIS</CardTitle>
             <ExportButton data={[]} filename="bundles" />
           </CardHeader>
           <CardContent>
@@ -216,10 +217,10 @@ export default function Home() {
 
       {/* Route Performance */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <GitBranch className="h-5 w-5" />
-            Route Performance
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4" strokeWidth={1.5} />
+            ROUTE PERFORMANCE
           </CardTitle>
           <ExportButton data={[]} filename="routes" />
         </CardHeader>

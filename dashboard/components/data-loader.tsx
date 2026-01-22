@@ -6,10 +6,10 @@ import { Alert, AlertDescription } from './ui/alert'
 import { Button } from './ui/button'
 
 interface DataLoaderProps<T> {
-  data?: T
-  error?: string
+  data: T | null | undefined
+  error?: string | null
   isLoading: boolean
-  children: (data: T) => ReactNode
+  children: (data: NonNullable<T>) => ReactNode
   loadingComponent?: ReactNode
   errorComponent?: (error: string, retry: () => void) => ReactNode
   onRetry?: () => void
@@ -55,7 +55,7 @@ export function DataLoader<T>({
     )
   }
 
-  if (!data) {
+  if (data == null) {
     return (
       <div className="flex items-center justify-center p-8 text-muted-foreground">
         No data available. Run <code className="mx-1">vantage check</code> to generate metrics.

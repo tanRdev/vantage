@@ -234,6 +234,38 @@ class DashboardStorage {
     return stmt.all(branch, limit) as Array<{ timestamp: number; value: number }>
   }
 
+  getBundleTrend(
+    branch: string,
+    chunkName: string,
+    limit: number = 30
+  ): Array<{ timestamp: number; value: number }> {
+    const stmt = this.db.prepare(`
+      SELECT timestamp, new_size as value FROM bundle_metrics
+      WHERE branch = ? AND chunk_name = ? AND new_size IS NOT NULL
+      ORDER BY timestamp ASC LIMIT ?
+    `)
+
+    return stmt.all(branch, chunkName, limit) as Array<{ timestamp: number; value: number }>
+  }
+
+  getAllBundleTrends(
+    branch: string,
+    limit: number = 30
+  ): Array<{ chunkName: string; timestamp: number; value: number }> {
+    const stmt = this.db.prepare(`
+      SELECT chunk_name, timestamp, new_size as value FROM bundle_metrics
+      WHERE branch = ? AND new_size IS NOT NULL
+      ORDER BY timestamp DESC LIMIT ?
+    `)
+
+    const rows = stmt.all(branch, limit) as Array<{ chunk_name: string; timestamp: number; value: number }>
+    return rows.map(row => ({
+      chunkName: row.chunk_name,
+      timestamp: row.timestamp,
+      value: row.value,
+    }))
+  }
+
   getBranches(): string[] {
     const stmt = this.db.prepare(`
       SELECT DISTINCT branch FROM runtime_metrics

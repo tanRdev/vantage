@@ -106,6 +106,18 @@ export interface StatsResponse {
   error?: string
 }
 
+export interface BundleTrendDataPoint {
+  timestamp: number
+  value: number
+  date?: string
+}
+
+export interface BundleTrendsResponse {
+  success: boolean
+  data?: Record<string, BundleTrendDataPoint[]>
+  error?: string
+}
+
 export interface QueryParams {
   branch?: string
   limit?: number

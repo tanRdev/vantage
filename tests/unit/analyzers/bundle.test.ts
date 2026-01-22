@@ -249,6 +249,38 @@ describe("BundleAnalyzer", () => {
       expect(results[0].currentSize).toBe(0);
       expect(results[0].exceeds).toBe(false);
     });
+
+    it("should throw error on invalid regex pattern", () => {
+      const budgets = [
+        { path: "(?invalid[regex", max: "100kb" },
+      ];
+
+      expect(() => analyzer.checkBudget(mockChunks, budgets)).toThrow(
+        /Invalid regex pattern/i
+      );
+    });
+
+    it("should throw error with pattern name in error message", () => {
+      const budgets = [
+        { path: "(?unclosed[brace", max: "100kb" },
+      ];
+
+      expect(() => analyzer.checkBudget(mockChunks, budgets)).toThrow(
+        "Invalid regex pattern"
+      );
+    });
+
+    it("should support valid regex patterns", () => {
+      const budgets = [
+        { path: ".*\\.js$", max: "500kb" },
+      ];
+
+      const results = analyzer.checkBudget(mockChunks, budgets);
+
+      expect(results.length).toBe(1);
+      expect(results[0].currentSize).toBe(1024 * 350);
+      expect(results[0].exceeds).toBe(false);
+    });
   });
 
   describe("generateTreemapData", () => {

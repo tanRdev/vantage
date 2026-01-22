@@ -3,6 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import type { ChildProcess } from "child_process";
 import Reporter from "../core/reporter.js";
+import { validateAndResolveDashboardPath } from "../utils/path-validator.js";
 
 export default class Dashboard extends Command {
   static description = "Launch performance dashboard";
@@ -25,11 +26,20 @@ export default class Dashboard extends Command {
       Reporter.info("Deploying dashboard to GitHub Pages...");
 
       try {
+        // Validate the dashboard path before using it
+        const validatedPath = validateAndResolveDashboardPath("dashboard");
+        if (!validatedPath) {
+          Reporter.error("Dashboard directory not found or invalid. Run from project root.");
+          process.exit(1);
+        }
+
         const { spawn } = await import("child_process");
 
+        // Use shell: false with explicit arguments for security
         const build = spawn("npm", ["run", "build"], {
-          cwd: "./dashboard",
+          cwd: validatedPath,
           stdio: "inherit",
+          shell: false,
         });
 
         const exitCode = await new Promise<number>((resolve) => {
@@ -57,23 +67,27 @@ export default class Dashboard extends Command {
       Reporter.info("Opening dashboard at http://localhost:" + port);
 
       try {
-        const { spawn } = await import("child_process");
-        const dashboardPath = path.join(process.cwd(), "dashboard");
-
-        if (!fs.existsSync(dashboardPath)) {
-          Reporter.error("Dashboard directory not found. Run from project root.");
+        // Validate the dashboard path before using it
+        const validatedPath = validateAndResolveDashboardPath("dashboard");
+        if (!validatedPath) {
+          Reporter.error("Dashboard directory not found or invalid. Run from project root.");
           process.exit(1);
         }
 
-        const packageJsonPath = path.join(dashboardPath, "package.json");
+        // Verify package.json exists
+        const packageJsonPath = path.join(validatedPath, "package.json");
         if (!fs.existsSync(packageJsonPath)) {
           Reporter.error("Dashboard package.json not found. Is the dashboard properly set up?");
           process.exit(1);
         }
 
+        const { spawn } = await import("child_process");
+
+        // Use shell: false with explicit arguments for security
         const dev = spawn("npm", ["run", "dev"], {
-          cwd: dashboardPath,
+          cwd: validatedPath,
           stdio: "inherit",
+          shell: false,
         });
 
         // Store reference for cleanup

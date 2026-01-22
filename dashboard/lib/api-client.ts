@@ -4,6 +4,7 @@ import type {
   RoutesResponse,
   BuildsResponse,
   StatsResponse,
+  BundleTrendsResponse,
   QueryParams,
 } from '@/types/api'
 
@@ -51,5 +52,9 @@ export const api = {
 
   getStats: async (): Promise<StatsResponse> => {
     return fetchWithErrorHandling<StatsResponse>('/stats')
+  },
+
+  getBundleTrends: async (params?: QueryParams): Promise<BundleTrendsResponse> => {
+    return fetchWithErrorHandling<BundleTrendsResponse>('/trends/bundles', params)
   },
 }

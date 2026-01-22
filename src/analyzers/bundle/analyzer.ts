@@ -125,14 +125,8 @@ export class BundleAnalyzer {
       let regex: RegExp;
       try {
         regex = new RegExp(budget.path);
-      } catch {
-        Reporter.error(`Invalid regex pattern in budget: ${budget.path}`);
-        return {
-          path: budget.path,
-          currentSize: 0,
-          maxSize: this.parseSize(budget.max),
-          exceeds: false,
-        };
+      } catch (e) {
+        throw new Error(`Invalid regex pattern in budget: ${budget.path}`);
       }
 
       const matchingChunks = chunks.filter(

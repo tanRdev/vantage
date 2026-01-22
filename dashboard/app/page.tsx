@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { TrendChart } from '../components/charts/TrendChart'
 import { BundleTable } from '../components/charts/BundleTable'
 import { RouteTable } from '../components/charts/RouteTable'
+import { BundleTrendChart } from '../components/charts/BundleTrendChart'
 import { MetricCard } from '../components/metric-card'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Loader2, Activity, Package, GitBranch } from 'lucide-react'
@@ -11,6 +12,7 @@ import { api } from '@/lib/api-client'
 import { DataLoader } from '../components/data-loader'
 import { ExportButton } from '../components/export-button'
 import { RefreshCw } from 'lucide-react'
+import type { BundleTrendDataPoint } from '@/types/api'
 
 interface TrendData {
   lcp: Array<{ timestamp: number; value: number; date?: string }>
@@ -26,8 +28,13 @@ interface StatsData {
   bundle?: number
 }
 
+interface BundleTrendData {
+  [chunkName: string]: BundleTrendDataPoint[]
+}
+
 export default function Home() {
   const [trends, setTrends] = useState<TrendData | null>(null)
+  const [bundleTrends, setBundleTrends] = useState<BundleTrendData | null>(null)
   const [stats, setStats] = useState<StatsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,13 +43,18 @@ export default function Home() {
   const fetchData = async (showRefreshLoader = false) => {
     try {
       if (showRefreshLoader) setIsRefreshing(true)
-      const [metricsRes, statsRes] = await Promise.all([
+      const [metricsRes, bundleTrendsRes, statsRes] = await Promise.all([
         api.getMetrics({ limit: 30 }),
+        api.getBundleTrends({ limit: 50 }),
         api.getStats(),
       ])
 
       if (metricsRes.success && metricsRes.data) {
         setTrends(metricsRes.data)
+      }
+
+      if (bundleTrendsRes.success && bundleTrendsRes.data) {
+        setBundleTrends(bundleTrendsRes.data)
       }
 
       if (statsRes.success && statsRes.data) {
@@ -95,7 +107,7 @@ export default function Home() {
       {/* Quick Stats */}
       <DataLoader
         data={stats}
-        error={error}
+        error={error ?? undefined}
         isLoading={isLoading}
         loadingComponent={
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -109,37 +121,55 @@ export default function Home() {
           </div>
         }
       >
-        {(statsData) => (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              label="Largest Contentful Paint"
-              value={statsData.lcp?.toFixed(1) || '—'}
-              unit="s"
-              icon={Activity}
-              status={statsData.lcp && statsData.lcp < 2.5 ? 'success' : statsData.lcp && statsData.lcp < 4 ? 'warning' : 'error'}
-            />
-            <MetricCard
-              label="Interaction to Next Paint"
-              value={statsData.inp?.toFixed(0) || '—'}
-              unit="ms"
-              icon={Activity}
-              status={statsData.inp && statsData.inp < 200 ? 'success' : statsData.inp && statsData.inp < 500 ? 'warning' : 'error'}
-            />
-            <MetricCard
-              label="Cumulative Layout Shift"
-              value={statsData.cls?.toFixed(3) || '—'}
-              icon={Activity}
-              status={statsData.cls && statsData.cls < 0.1 ? 'success' : statsData.cls && statsData.cls < 0.25 ? 'warning' : 'error'}
-            />
-            <MetricCard
-              label="Bundle Size"
-              value={statsData.bundle ? (statsData.bundle / 1024).toFixed(0) : '—'}
-              unit="KB"
-              icon={Package}
-              status={statsData.bundle && statsData.bundle < 200 * 1024 ? 'success' : statsData.bundle && statsData.bundle < 500 * 1024 ? 'warning' : 'error'}
-            />
-          </div>
-        )}
+        {(statsData) => {
+          const lcpStatus = statsData.lcp != null
+            ? statsData.lcp < 2.5 ? 'success' : statsData.lcp < 4 ? 'warning' : 'error'
+            : undefined
+
+          const inpStatus = statsData.inp != null
+            ? statsData.inp < 200 ? 'success' : statsData.inp < 500 ? 'warning' : 'error'
+            : undefined
+
+          const clsStatus = statsData.cls != null
+            ? statsData.cls < 0.1 ? 'success' : statsData.cls < 0.25 ? 'warning' : 'error'
+            : undefined
+
+          const bundleStatus = statsData.bundle != null
+            ? statsData.bundle < 200 * 1024 ? 'success' : statsData.bundle < 500 * 1024 ? 'warning' : 'error'
+            : undefined
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <MetricCard
+                label="Largest Contentful Paint"
+                value={statsData.lcp?.toFixed(1) ?? '—'}
+                unit="s"
+                icon={Activity}
+                status={lcpStatus}
+              />
+              <MetricCard
+                label="Interaction to Next Paint"
+                value={statsData.inp?.toFixed(0) ?? '—'}
+                unit="ms"
+                icon={Activity}
+                status={inpStatus}
+              />
+              <MetricCard
+                label="Cumulative Layout Shift"
+                value={statsData.cls?.toFixed(3) ?? '—'}
+                icon={Activity}
+                status={clsStatus}
+              />
+              <MetricCard
+                label="Bundle Size"
+                value={statsData.bundle ? (statsData.bundle / 1024).toFixed(0) : '—'}
+                unit="KB"
+                icon={Package}
+                status={bundleStatus}
+              />
+            </div>
+          )
+        }}
       </DataLoader>
 
       {/* Main Content Grid */}
@@ -152,7 +182,7 @@ export default function Home() {
           <CardContent>
             <DataLoader
               data={trends}
-              error={error}
+              error={error ?? undefined}
               isLoading={isLoading}
               loadingComponent={
                 <div className="h-80 flex items-center justify-center">
@@ -176,6 +206,13 @@ export default function Home() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bundle Size Trends */}
+      <BundleTrendChart
+        data={bundleTrends ?? undefined}
+        isLoading={isLoading}
+        error={error ?? undefined}
+      />
 
       {/* Route Performance */}
       <Card>

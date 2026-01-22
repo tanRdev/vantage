@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, cleanup, act } from '@testing-library/react'
 import { BundleTreemap } from './BundleTreemap'
 
-// Mock d3 module - minimal mocking since we're testing ResizeObserver integration
+// Mock d3 module - these tests focus on ResizeObserver integration, not D3 rendering
 vi.mock('d3', () => {
   const createChainable = () => ({
     selectAll: vi.fn(() => createChainable()),
@@ -20,22 +20,26 @@ vi.mock('d3', () => {
       attr: vi.fn(() => createChainable()),
       style: vi.fn(() => createChainable()),
     })),
+    nodes: vi.fn(() => []),
   })
 
-  // Create a treemap mock that returns a callable function with chainable methods
-  const createTreemap = vi.fn(() => {
-    const fn = function() {} as any
-    fn.size = vi.fn(() => fn)
-    fn.padding = vi.fn(() => fn)
-    fn.round = vi.fn(() => fn)
-    return fn
-  })
-
-  // Create a hierarchy mock that returns a callable function with chainable methods
   const createHierarchy = vi.fn(() => {
     const fn = function() {} as any
     fn.sum = vi.fn(() => fn)
     fn.sort = vi.fn(() => fn)
+    fn.leaves = vi.fn(() => [])
+    fn.each = vi.fn(() => fn)
+    fn.descendants = vi.fn(() => [])
+    return fn
+  })
+
+  const createTreemap = vi.fn(() => {
+    const fn = function(_rootNode: any) {
+      return _rootNode || fn
+    } as any
+    fn.size = vi.fn(() => fn)
+    fn.padding = vi.fn(() => fn)
+    fn.round = vi.fn(() => fn)
     return fn
   })
 
@@ -74,6 +78,12 @@ describe('BundleTreemap', () => {
   beforeEach(() => {
     resizeObserverInstances = []
 
+    // Mock HTMLElement.clientWidth for the test environment
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    })
+
     // Create a mock ResizeObserver class
     const MockResizeObserver = class {
       constructor(callback: ResizeObserverCallback) {
@@ -104,7 +114,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       expect(resizeObserverInstances.length).toBeGreaterThan(0)
@@ -116,7 +126,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       expect(resizeObserverInstances.length).toBeGreaterThan(0)
@@ -134,7 +144,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       const observerInstance = resizeObserverInstances[0]
@@ -154,7 +164,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       expect(resizeObserverInstances.length).toBeGreaterThan(0)
@@ -169,7 +179,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       const observerInstance = resizeObserverInstances[0]
@@ -196,7 +206,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       const observerInstance = resizeObserverInstances[0]
@@ -228,7 +238,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       expect(resizeObserverInstances.length).toBe(1)
@@ -251,7 +261,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       const firstObserverCount = resizeObserverInstances.length
@@ -268,7 +278,7 @@ describe('BundleTreemap', () => {
       })
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       })
 
       expect(resizeObserverInstances.length).toBeGreaterThan(firstObserverCount)

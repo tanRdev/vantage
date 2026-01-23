@@ -29,20 +29,26 @@ export class TreemapGenerator {
     const html = await this.buildHTML(data, outputPath);
 
     try {
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.writeFileSync(outputPath, html, "utf-8");
     } catch (error) {
-      throw new Error(`Failed to write treemap HTML to ${outputPath}: ${error}`);
+      throw new Error(
+        `Failed to write treemap HTML to ${outputPath}: ${error}`,
+      );
     }
   }
 
-  private async buildHTML(data: TreemapNode, _outputPath: string): Promise<string> {
+  private async buildHTML(
+    data: TreemapNode,
+    _outputPath: string,
+  ): Promise<string> {
     const templatePath = path.join(this.templatesDir, "treemap.html");
     let html = fs.readFileSync(templatePath, "utf-8");
 
     const scriptContent = this.buildScript(data);
     html = html.replace(
       '<script src="./treemap-script.js"></script>',
-      `<script>${scriptContent}</script>`
+      `<script>${scriptContent}</script>`,
     );
 
     const stylesPath = path.join(this.templatesDir, "treemap-styles.css");
@@ -50,7 +56,7 @@ export class TreemapGenerator {
 
     html = html.replace(
       '<link rel="stylesheet" href="./treemap-styles.css">',
-      `<style>${styles}</style>`
+      `<style>${styles}</style>`,
     );
 
     return html;

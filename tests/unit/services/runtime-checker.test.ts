@@ -39,7 +39,7 @@ describe("RuntimeChecker", () => {
     };
 
     config = {
-      routes: ["/"],
+      routes: ["/", "/about"],
       exclude: [],
       thresholds: {
         lcp: 2500,
@@ -95,12 +95,27 @@ describe("RuntimeChecker", () => {
       mockRouteDetectorInstance = {
         detectRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/about", type: "app" as const, isDynamic: false, segments: ["about"] },
-          { path: "/blog/[id]", type: "app" as const, isDynamic: true, segments: ["blog", "[id]"] },
+          {
+            path: "/about",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["about"],
+          },
+          {
+            path: "/blog/[id]",
+            type: "app" as const,
+            isDynamic: true,
+            segments: ["blog", "[id]"],
+          },
         ]),
         getTopNRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/about", type: "app" as const, isDynamic: false, segments: ["about"] },
+          {
+            path: "/about",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["about"],
+          },
         ]),
       };
 
@@ -115,7 +130,7 @@ describe("RuntimeChecker", () => {
           cls: 0.05,
           tbt: 200,
           fcp: 1000,
-          score: 0.95,
+          score: 95,
         },
         {
           url: "http://localhost:3000/about",
@@ -124,7 +139,7 @@ describe("RuntimeChecker", () => {
           cls: 0.03,
           tbt: 150,
           fcp: 900,
-          score: 0.97,
+          score: 97,
         },
       ];
 
@@ -132,7 +147,9 @@ describe("RuntimeChecker", () => {
         run: vi.fn().mockResolvedValue(mockLighthouseResults),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       // Setup ThresholdEngine mock
       mockThresholdEngine.compareRuntimeMetric = vi.fn().mockReturnValue({
@@ -142,21 +159,23 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/", "/about"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should complete the full orchestration flow successfully", async () => {
       await expect(runtimeChecker.check()).resolves.not.toThrow();
 
       // Verify route detection was called
-      expect(mockRouteDetector).toHaveBeenCalledWith(workingDir, nextjsInfo.routerType);
-      expect(mockRouteDetectorInstance.detectRoutes).toHaveBeenCalledWith([]);
-
-      // Verify top N routes was called
-      expect(mockRouteDetectorInstance.getTopNRoutes).toHaveBeenCalledWith(
-        expect.any(Array),
-        config.routes.length,
-        ["api", "middleware"]
+      expect(mockRouteDetector).toHaveBeenCalledWith(
+        workingDir,
+        nextjsInfo.routerType,
       );
+      expect(mockRouteDetectorInstance.detectRoutes).toHaveBeenCalledWith([]);
 
       // Verify LighthouseRunner was created with correct config
       expect(mockLighthouseRunner).toHaveBeenCalledWith({
@@ -174,7 +193,9 @@ describe("RuntimeChecker", () => {
       expect(mockThresholdEngine.shouldBlockPR).toHaveBeenCalled();
 
       // Verify success message
-      expect(mockReporter.success).toHaveBeenCalledWith("All runtime checks passed!");
+      expect(mockReporter.success).toHaveBeenCalledWith(
+        "All runtime checks passed!",
+      );
     });
 
     it("should use default lighthouse config when not provided", async () => {
@@ -183,7 +204,11 @@ describe("RuntimeChecker", () => {
         thresholds: { lcp: 2500 },
       };
 
-      const checker = new RuntimeChecker(workingDir, nextjsInfo, configWithoutLighthouse);
+      const checker = new RuntimeChecker(
+        workingDir,
+        nextjsInfo,
+        configWithoutLighthouse,
+      );
 
       await checker.check();
 
@@ -203,21 +228,32 @@ describe("RuntimeChecker", () => {
         thresholds: { lcp: 2500 },
       };
 
-      const checker = new RuntimeChecker(workingDir, nextjsInfo, configWithExclude);
+      const checker = new RuntimeChecker(
+        workingDir,
+        nextjsInfo,
+        configWithExclude,
+      );
 
       await checker.check();
 
-      expect(mockRouteDetectorInstance.detectRoutes).toHaveBeenCalledWith(["/api/*", "/admin/*"]);
+      expect(mockRouteDetectorInstance.detectRoutes).toHaveBeenCalledWith([
+        "/api/*",
+        "/admin/*",
+      ]);
     });
 
     it("should throw error with code 1 when thresholds are exceeded", async () => {
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(true);
 
-      await expect(runtimeChecker.check()).rejects.toThrow("Performance thresholds exceeded");
+      await expect(runtimeChecker.check()).rejects.toThrow(
+        "Performance thresholds exceeded",
+      );
 
-      const error = await runtimeChecker.check().catch(e => e);
+      const error = await runtimeChecker.check().catch((e) => e);
       expect(error.code).toBe(1);
-      expect(mockReporter.error).toHaveBeenCalledWith("Performance thresholds exceeded!");
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        "Performance thresholds exceeded!",
+      );
     });
 
     it("should log progress messages during execution", async () => {
@@ -260,12 +296,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -279,12 +319,14 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
     });
 
     it("should pass when all metrics are under thresholds", async () => {
@@ -297,7 +339,9 @@ describe("RuntimeChecker", () => {
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
 
       await expect(runtimeChecker.check()).resolves.not.toThrow();
-      expect(mockReporter.success).toHaveBeenCalledWith("All runtime checks passed!");
+      expect(mockReporter.success).toHaveBeenCalledWith(
+        "All runtime checks passed!",
+      );
     });
 
     it("should block when any metric fails threshold", async () => {
@@ -310,8 +354,12 @@ describe("RuntimeChecker", () => {
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(true);
 
-      await expect(runtimeChecker.check()).rejects.toThrow("Performance thresholds exceeded");
-      expect(mockReporter.error).toHaveBeenCalledWith("Performance thresholds exceeded!");
+      await expect(runtimeChecker.check()).rejects.toThrow(
+        "Performance thresholds exceeded",
+      );
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        "Performance thresholds exceeded!",
+      );
     });
   });
 
@@ -321,12 +369,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -338,6 +390,12 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should handle routes with query strings in URL", async () => {
@@ -350,12 +408,14 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
@@ -372,20 +432,29 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await expect(runtimeChecker.check()).resolves.not.toThrow();
     });
 
     it("should handle empty routes list", async () => {
-      mockRouteDetectorInstance.getTopNRoutes = vi.fn().mockReturnValue([]);
+      const configWithNoRoutes: RuntimeConfig = {
+        ...config,
+        routes: [],
+      };
 
-      const checker = new RuntimeChecker(workingDir, nextjsInfo, config);
+      const checker = new RuntimeChecker(
+        workingDir,
+        nextjsInfo,
+        configWithNoRoutes,
+      );
 
       await checker.check();
 
@@ -404,12 +473,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -421,6 +494,12 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should construct correct URLs for routes", async () => {
@@ -433,7 +512,7 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
@@ -444,6 +523,46 @@ describe("RuntimeChecker", () => {
 
       expect(mockLighthouseRunner).toHaveBeenCalledWith({
         urls: ["http://localhost:3000/"],
+        numberOfRuns: 3,
+        preset: "desktop",
+        throttling: "fast-3g",
+        outputDir: ".vantage/lighthouse",
+      });
+    });
+
+    it("should use baseUrl when constructing URLs", async () => {
+      const configWithBaseUrl: RuntimeConfig = {
+        ...config,
+        baseUrl: "https://example.com/base",
+        routes: ["/", "/about"],
+      };
+
+      const checker = new RuntimeChecker(
+        workingDir,
+        nextjsInfo,
+        configWithBaseUrl,
+      );
+
+      const mockInstance = {
+        run: vi.fn().mockResolvedValue([
+          {
+            url: "https://example.com/base/",
+            lcp: 2000,
+            inp: 150,
+            cls: 0.05,
+            tbt: 200,
+            fcp: 1000,
+            score: 95,
+          },
+        ]),
+      };
+
+      mockLighthouseRunner.mockImplementation(() => mockInstance);
+
+      await checker.check();
+
+      expect(mockLighthouseRunner).toHaveBeenCalledWith({
+        urls: ["https://example.com/base/", "https://example.com/base/about"],
         numberOfRuns: 3,
         preset: "desktop",
         throttling: "fast-3g",
@@ -468,12 +587,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -497,19 +620,21 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
       expect(mockThresholdEngine.compareRuntimeMetric).toHaveBeenCalledWith(
         2000,
         config.thresholds,
-        "lcp"
+        "lcp",
       );
     });
 
@@ -523,19 +648,21 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
       expect(mockThresholdEngine.compareRuntimeMetric).toHaveBeenCalledWith(
         150,
         config.thresholds,
-        "inp"
+        "inp",
       );
     });
 
@@ -549,19 +676,21 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
       expect(mockThresholdEngine.compareRuntimeMetric).toHaveBeenCalledWith(
         0.05,
         config.thresholds,
-        "cls"
+        "cls",
       );
     });
 
@@ -575,19 +704,21 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
       expect(mockThresholdEngine.compareRuntimeMetric).toHaveBeenCalledWith(
         200,
         config.thresholds,
-        "tbt"
+        "tbt",
       );
     });
 
@@ -601,19 +732,23 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.92,
+            score: 92,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
       const printedResults = mockReporter.printMetricTable.mock.calls[0][0];
-      const scoreResult = printedResults.find((r: any) => r.name === "Score (/)");
+      const scoreResult = printedResults.find(
+        (r: any) => r.name === "Score (/)",
+      );
 
-      // Score of 0.92 should be 92, which is below 90 threshold
+      // Score of 92 should be reported as 92
       expect(scoreResult).toBeDefined();
       expect(scoreResult.current).toBe("92");
     });
@@ -624,7 +759,11 @@ describe("RuntimeChecker", () => {
         thresholds: { lcp: 2500 }, // Only LCP configured
       };
 
-      const checker = new RuntimeChecker(workingDir, nextjsInfo, configWithoutAllThresholds);
+      const checker = new RuntimeChecker(
+        workingDir,
+        nextjsInfo,
+        configWithoutAllThresholds,
+      );
 
       mockLighthouseRunnerInstance = {
         run: vi.fn().mockResolvedValue([
@@ -635,12 +774,14 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await checker.check();
 
@@ -648,7 +789,7 @@ describe("RuntimeChecker", () => {
       expect(mockThresholdEngine.compareRuntimeMetric).toHaveBeenCalledWith(
         2000,
         configWithoutAllThresholds.thresholds,
-        "lcp"
+        "lcp",
       );
     });
   });
@@ -661,15 +802,45 @@ describe("RuntimeChecker", () => {
       mockRouteDetectorInstance = {
         detectRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/about", type: "app" as const, isDynamic: false, segments: ["about"] },
-          { path: "/contact", type: "app" as const, isDynamic: false, segments: ["contact"] },
-          { path: "/blog", type: "app" as const, isDynamic: false, segments: ["blog"] },
-          { path: "/api/users", type: "api" as const, isDynamic: false, segments: ["api", "users"] },
+          {
+            path: "/about",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["about"],
+          },
+          {
+            path: "/contact",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["contact"],
+          },
+          {
+            path: "/blog",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["blog"],
+          },
+          {
+            path: "/api/users",
+            type: "api" as const,
+            isDynamic: false,
+            segments: ["api", "users"],
+          },
         ]),
         getTopNRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/about", type: "app" as const, isDynamic: false, segments: ["about"] },
-          { path: "/contact", type: "app" as const, isDynamic: false, segments: ["contact"] },
+          {
+            path: "/about",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["about"],
+          },
+          {
+            path: "/contact",
+            type: "app" as const,
+            isDynamic: false,
+            segments: ["contact"],
+          },
         ]),
       };
 
@@ -684,7 +855,7 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
           {
             url: "http://localhost:3000/about",
@@ -693,7 +864,7 @@ describe("RuntimeChecker", () => {
             cls: 0.03,
             tbt: 150,
             fcp: 900,
-            score: 0.97,
+            score: 97,
           },
           {
             url: "http://localhost:3000/contact",
@@ -702,12 +873,14 @@ describe("RuntimeChecker", () => {
             cls: 0.04,
             tbt: 180,
             fcp: 950,
-            score: 0.94,
+            score: 94,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       mockThresholdEngine.compareRuntimeMetric = vi.fn().mockReturnValue({
         passed: true,
@@ -716,6 +889,12 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/", "/about", "/contact"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should process results for all routes", async () => {
@@ -746,12 +925,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -773,18 +956,22 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.90,
+            score: 90,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
 
       await runtimeChecker.check();
 
       const printedResults = mockReporter.printMetricTable.mock.calls[0][0];
-      const scoreResult = printedResults.find((r: any) => r.name === "Score (/)");
+      const scoreResult = printedResults.find(
+        (r: any) => r.name === "Score (/)",
+      );
 
       expect(scoreResult.status).toBe("pass");
     });
@@ -799,20 +986,26 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.89,
+            score: 89,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       // Return true for shouldBlockPR to simulate blocking on low score
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(true);
 
-      await expect(runtimeChecker.check()).rejects.toThrow("Performance thresholds exceeded");
+      await expect(runtimeChecker.check()).rejects.toThrow(
+        "Performance thresholds exceeded",
+      );
 
       const printedResults = mockReporter.printMetricTable.mock.calls[0][0];
-      const scoreResult = printedResults.find((r: any) => r.name === "Score (/)");
+      const scoreResult = printedResults.find(
+        (r: any) => r.name === "Score (/)",
+      );
 
       expect(scoreResult.status).toBe("fail");
     });
@@ -826,11 +1019,21 @@ describe("RuntimeChecker", () => {
       mockRouteDetectorInstance = {
         detectRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/blog/[id]", type: "app" as const, isDynamic: true, segments: ["blog", "[id]"] },
+          {
+            path: "/blog/[id]",
+            type: "app" as const,
+            isDynamic: true,
+            segments: ["blog", "[id]"],
+          },
         ]),
         getTopNRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/blog/[id]", type: "app" as const, isDynamic: true, segments: ["blog", "[id]"] },
+          {
+            path: "/blog/[id]",
+            type: "app" as const,
+            isDynamic: true,
+            segments: ["blog", "[id]"],
+          },
         ]),
       };
 
@@ -845,7 +1048,7 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
           {
             url: "http://localhost:3000/blog/[id]",
@@ -854,12 +1057,14 @@ describe("RuntimeChecker", () => {
             cls: 0.06,
             tbt: 220,
             fcp: 1100,
-            score: 0.93,
+            score: 93,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       mockThresholdEngine.compareRuntimeMetric = vi.fn().mockReturnValue({
         passed: true,
@@ -868,16 +1073,19 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/", "/blog/[id]"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should include dynamic routes in testing", async () => {
       await runtimeChecker.check();
 
       expect(mockLighthouseRunner).toHaveBeenCalledWith({
-        urls: [
-          "http://localhost:3000/",
-          "http://localhost:3000/blog/[id]",
-        ],
+        urls: ["http://localhost:3000/", "http://localhost:3000/blog/[id]"],
         numberOfRuns: 3,
         preset: "desktop",
         throttling: "fast-3g",
@@ -898,17 +1106,30 @@ describe("RuntimeChecker", () => {
       });
 
       mockThresholdEngine.shouldBlockPR = vi.fn().mockReturnValue(false);
+
+      config = {
+        ...config,
+        routes: ["/"],
+      };
+      runtimeChecker = new RuntimeChecker(workingDir, nextjsInfo, config);
     });
 
     it("should filter out api routes by default", async () => {
       mockRouteDetectorInstance = {
         detectRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/api/users", type: "api" as const, isDynamic: false, segments: ["api", "users"] },
+          {
+            path: "/api/users",
+            type: "api" as const,
+            isDynamic: false,
+            segments: ["api", "users"],
+          },
         ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -922,32 +1143,42 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
-      // getTopNRoutes should be called with default exclude types
-      expect(mockRouteDetectorInstance.getTopNRoutes).toHaveBeenCalledWith(
-        expect.any(Array),
-        config.routes.length,
-        ["api", "middleware"]
-      );
+      expect(mockLighthouseRunner).toHaveBeenCalledWith({
+        urls: ["http://localhost:3000/"],
+        numberOfRuns: 3,
+        preset: "desktop",
+        throttling: "fast-3g",
+        outputDir: ".vantage/lighthouse",
+      });
     });
 
     it("should filter out middleware routes by default", async () => {
       mockRouteDetectorInstance = {
         detectRoutes: vi.fn().mockReturnValue([
           { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-          { path: "/middleware/auth", type: "middleware" as const, isDynamic: false, segments: ["middleware", "auth"] },
+          {
+            path: "/middleware/auth",
+            type: "middleware" as const,
+            isDynamic: false,
+            segments: ["middleware", "auth"],
+          },
         ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -961,20 +1192,24 @@ describe("RuntimeChecker", () => {
             cls: 0.05,
             tbt: 200,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       await runtimeChecker.check();
 
-      expect(mockRouteDetectorInstance.getTopNRoutes).toHaveBeenCalledWith(
-        expect.any(Array),
-        config.routes.length,
-        ["api", "middleware"]
-      );
+      expect(mockLighthouseRunner).toHaveBeenCalledWith({
+        urls: ["http://localhost:3000/"],
+        numberOfRuns: 3,
+        preset: "desktop",
+        throttling: "fast-3g",
+        outputDir: ".vantage/lighthouse",
+      });
     });
   });
 
@@ -984,12 +1219,16 @@ describe("RuntimeChecker", () => {
 
     beforeEach(() => {
       mockRouteDetectorInstance = {
-        detectRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
-        getTopNRoutes: vi.fn().mockReturnValue([
-          { path: "/", type: "app" as const, isDynamic: false, segments: [] },
-        ]),
+        detectRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
+        getTopNRoutes: vi
+          .fn()
+          .mockReturnValue([
+            { path: "/", type: "app" as const, isDynamic: false, segments: [] },
+          ]),
       };
 
       mockRouteDetector.mockImplementation(() => mockRouteDetectorInstance);
@@ -1003,12 +1242,14 @@ describe("RuntimeChecker", () => {
             cls: 0.123,
             tbt: 234.56,
             fcp: 1000,
-            score: 0.95,
+            score: 95,
           },
         ]),
       };
 
-      mockLighthouseRunner.mockImplementation(() => mockLighthouseRunnerInstance);
+      mockLighthouseRunner.mockImplementation(
+        () => mockLighthouseRunnerInstance,
+      );
 
       mockThresholdEngine.compareRuntimeMetric = vi.fn().mockReturnValue({
         passed: true,

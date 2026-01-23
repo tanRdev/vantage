@@ -1,6 +1,9 @@
 import Reporter from "../core/reporter.js";
 import { RouteDetector } from "../analyzers/runtime/routes.js";
-import { LighthouseRunner, type LighthouseResult } from "../analyzers/runtime/lighthouse.js";
+import {
+  LighthouseRunner,
+  type LighthouseResult,
+} from "../analyzers/runtime/lighthouse.js";
 import { ThresholdEngine } from "../core/threshold.js";
 import type { RuntimeConfig } from "../core/config.js";
 import type { NextjsInfo } from "../analyzers/bundle/nextjs.js";
@@ -18,32 +21,32 @@ export class RuntimeChecker {
   constructor(
     private workingDir: string,
     private nextjsInfo: NextjsInfo,
-    private config: RuntimeConfig
+    private config: RuntimeConfig,
   ) {}
 
   async check(): Promise<void> {
     Reporter.info("Detecting routes...");
 
-    const routeDetector = new RouteDetector(this.workingDir, this.nextjsInfo.routerType);
-    const allRoutes = routeDetector.detectRoutes(this.config.exclude || []);
-
-    const routesToTest = routeDetector.getTopNRoutes(
-      allRoutes,
-      this.config.routes.length,
-      ["api", "middleware"]
+    const routeDetector = new RouteDetector(
+      this.workingDir,
+      this.nextjsInfo.routerType,
     );
+    const allRoutes = routeDetector.detectRoutes(this.config.exclude || []);
+    const routesToTest = this.config.routes ?? [];
 
     Reporter.info(`Found ${allRoutes.length} routes`);
     Reporter.info(`Testing ${routesToTest.length} routes:`);
 
     for (const route of routesToTest) {
-      Reporter.info(`  - ${route.path}`);
+      Reporter.info(`  - ${route}`);
     }
 
     Reporter.info("Running Lighthouse...");
 
+    const baseUrl = this.config.baseUrl || "http://localhost:3000";
+
     const lighthouseRunner = new LighthouseRunner({
-      urls: routesToTest.map(r => `http://localhost:3000${r.path}`),
+      urls: routesToTest.map((route) => this.buildUrl(baseUrl, route)),
       numberOfRuns: this.config.lighthouse?.numberOfRuns || 3,
       preset: this.config.lighthouse?.preset || "desktop",
       throttling: this.config.lighthouse?.throttling || "fast-3g",
@@ -57,12 +60,18 @@ export class RuntimeChecker {
     Reporter.printMetricTable(results);
 
     const shouldBlock = ThresholdEngine.shouldBlockPR(
-      results.map(r => ({ passed: r.status === "pass", delta: 0, status: r.status }))
+      results.map((r) => ({
+        passed: r.status === "pass",
+        delta: 0,
+        status: r.status,
+      })),
     );
 
     if (shouldBlock) {
       Reporter.error("Performance thresholds exceeded!");
-      const error = new Error("Performance thresholds exceeded") as Error & { code: number };
+      const error = new Error("Performance thresholds exceeded") as Error & {
+        code: number;
+      };
       error.code = 1;
       throw error;
     }
@@ -70,7 +79,15 @@ export class RuntimeChecker {
     Reporter.success("All runtime checks passed!");
   }
 
-  private processResults(lighthouseResults: LighthouseResult[]): MetricResult[] {
+  private buildUrl(baseUrl: string, route: string): string {
+    const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+    const normalizedRoute = route === "/" ? "" : route.replace(/^\/+/, "");
+    return new URL(normalizedRoute, normalizedBaseUrl).toString();
+  }
+
+  private processResults(
+    lighthouseResults: LighthouseResult[],
+  ): MetricResult[] {
     const results: MetricResult[] = [];
 
     for (const result of lighthouseResults) {
@@ -80,7 +97,7 @@ export class RuntimeChecker {
         const lcpResult = ThresholdEngine.compareRuntimeMetric(
           result.lcp,
           this.config.thresholds,
-          "lcp"
+          "lcp",
         );
 
         results.push({
@@ -96,7 +113,7 @@ export class RuntimeChecker {
         const inpResult = ThresholdEngine.compareRuntimeMetric(
           result.inp,
           this.config.thresholds,
-          "inp"
+          "inp",
         );
 
         results.push({
@@ -112,7 +129,7 @@ export class RuntimeChecker {
         const clsResult = ThresholdEngine.compareRuntimeMetric(
           result.cls,
           this.config.thresholds,
-          "cls"
+          "cls",
         );
 
         results.push({
@@ -128,7 +145,7 @@ export class RuntimeChecker {
         const tbtResult = ThresholdEngine.compareRuntimeMetric(
           result.tbt,
           this.config.thresholds,
-          "tbt"
+          "tbt",
         );
 
         results.push({
@@ -140,7 +157,7 @@ export class RuntimeChecker {
         });
       }
 
-      const score = result.score * 100;
+      const score = result.score <= 1 ? result.score * 100 : result.score;
 
       results.push({
         name: `Score (${routeName})`,

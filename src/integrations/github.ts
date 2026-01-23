@@ -13,7 +13,10 @@ function validateGitHubToken(token: string): void {
     throw new Error("GITHUB_TOKEN appears to be invalid (too short)");
   }
 
-  if (trimmedToken === "YOUR_TOKEN_HERE" || trimmedToken === "YOUR_GITHUB_TOKEN") {
+  if (
+    trimmedToken === "YOUR_TOKEN_HERE" ||
+    trimmedToken === "YOUR_GITHUB_TOKEN"
+  ) {
     throw new Error("GITHUB_TOKEN appears to be a placeholder value");
   }
 }
@@ -47,13 +50,83 @@ export interface GitHubStatusCheckResult {
   context: string;
 }
 
+export function shouldRetryOnRateLimit(
+  error: Error & { status?: number },
+): boolean {
+  if (error.status === 403 || error.status === 429) {
+    return true;
+  }
+  const errorMessage = error.message.toLowerCase();
+  if (
+    errorMessage.startsWith("rate limit") ||
+    errorMessage.startsWith("too many requests")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function calculateBackoffDelay(attempt: number): number {
+  const baseDelay = 1000;
+  const maxDelay = 60000;
+  const jitter = Math.random() * 0.3 + 0.85;
+  const delay = baseDelay * Math.pow(2, attempt - 1) * jitter;
+  return Math.min(delay, maxDelay);
+}
+
+export interface RetryOptions {
+  maxRetries?: number;
+  onRetry?: (attempt: number, error: Error) => void;
+  delayFn?: (attempt: number) => number;
+}
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {},
+): Promise<T> {
+  const maxRetries = options.maxRetries ?? 3;
+  const delayFn = options.delayFn ?? calculateBackoffDelay;
+
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const err = error as Error & { status?: number };
+      if (!shouldRetryOnRateLimit(err) || attempt > maxRetries) {
+        throw error;
+      }
+      if (options.onRetry) {
+        options.onRetry(attempt, err);
+      }
+      const delay = delayFn(attempt);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error("Unexpected error in retry loop");
+}
+
+export interface GitHubRetryOptions {
+  retries: number;
+  delayMs: number;
+}
+
+const defaultRetryOptions: GitHubRetryOptions = {
+  retries: 3,
+  delayMs: 500,
+};
+
 export class GitHubIntegration {
   private octokit: Octokit;
   private owner: string;
   private repo: string;
   private resultsPath: string;
+  private retryOptions: GitHubRetryOptions;
 
-  constructor(token: string, repository: string) {
+  constructor(
+    token: string,
+    repository: string,
+    options?: { retry?: Partial<GitHubRetryOptions> },
+  ) {
     validateGitHubToken(token);
     validateRepository(repository);
 
@@ -62,6 +135,10 @@ export class GitHubIntegration {
     this.owner = parts[0];
     this.repo = parts[1];
     this.resultsPath = ".vantage/results.json";
+    this.retryOptions = {
+      ...defaultRetryOptions,
+      ...options?.retry,
+    };
   }
 
   loadResults(): PerformanceResults | null {
@@ -73,7 +150,10 @@ export class GitHubIntegration {
       const content = fs.readFileSync(this.resultsPath, "utf-8");
       return JSON.parse(content) as PerformanceResults;
     } catch (error) {
-      Reporter.error("Failed to load results", error instanceof Error ? error : new Error(String(error)));
+      Reporter.error(
+        "Failed to load results",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }
@@ -89,21 +169,26 @@ export class GitHubIntegration {
     const comment = this.generateComment(results);
 
     try {
-      const result = await this.octokit.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: prNumber,
-        body: comment,
-      });
+      const result = await this.withRetry(() =>
+        this.octokit.rest.issues.createComment({
+          owner: this.owner,
+          repo: this.repo,
+          issue_number: prNumber,
+          body: comment,
+        }),
+      );
 
       Reporter.info(`Posted performance comment to PR #${prNumber}`);
       Reporter.info(`Comment URL: ${result.data.html_url}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       Reporter.error(`Failed to post comment: ${errorMessage}`);
 
       if (errorMessage.includes("401") || errorMessage.includes("403")) {
-        Reporter.error("Authentication failed. Please check your GITHUB_TOKEN has appropriate permissions.");
+        Reporter.error(
+          "Authentication failed. Please check your GITHUB_TOKEN has appropriate permissions.",
+        );
       }
       throw error;
     }
@@ -126,16 +211,19 @@ export class GitHubIntegration {
     const comment = this.generateComment(results);
 
     try {
-      await this.octokit.rest.issues.updateComment({
-        owner: this.owner,
-        repo: this.repo,
-        comment_id: commentId,
-        body: comment,
-      });
+      await this.withRetry(() =>
+        this.octokit.rest.issues.updateComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: commentId,
+          body: comment,
+        }),
+      );
 
       Reporter.info(`Updated performance comment on PR #${prNumber}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       Reporter.error(`Failed to update comment: ${errorMessage}`);
       throw error;
     }
@@ -164,18 +252,21 @@ export class GitHubIntegration {
     }
 
     try {
-      await this.octokit.rest.repos.createCommitStatus({
-        owner: this.owner,
-        repo: this.repo,
-        sha,
-        state,
-        description,
-        context: "vantage",
-      });
+      await this.withRetry(() =>
+        this.octokit.rest.repos.createCommitStatus({
+          owner: this.owner,
+          repo: this.repo,
+          sha,
+          state,
+          description,
+          context: "vantage",
+        }),
+      );
 
       Reporter.info(`Set status check: ${state} - ${description}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       Reporter.error(`Failed to set status check: ${errorMessage}`);
       throw error;
     }
@@ -187,21 +278,25 @@ export class GitHubIntegration {
       const perPage = 100;
 
       while (true) {
-        const response = await this.octokit.rest.issues.listComments({
-          owner: this.owner,
-          repo: this.repo,
-          issue_number: prNumber,
-          per_page: perPage,
-          page,
-        });
+        const response = await this.withRetry(() =>
+          this.octokit.rest.issues.listComments({
+            owner: this.owner,
+            repo: this.repo,
+            issue_number: prNumber,
+            per_page: perPage,
+            page,
+          }),
+        );
 
         const comments = response.data;
 
         const botComment = comments.find((comment) => {
           const user = comment.user as { type?: string } | undefined;
-          return user?.type === "Bot" &&
+          return (
+            user?.type === "Bot" &&
             typeof comment.body === "string" &&
-            comment.body.includes("## Performance Results");
+            comment.body.includes("## Performance Results")
+          );
         });
 
         if (botComment) {
@@ -217,7 +312,8 @@ export class GitHubIntegration {
 
       return null;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       Reporter.error(`Failed to find existing comment: ${errorMessage}`);
       return null;
     }
@@ -262,7 +358,8 @@ export class GitHubIntegration {
 
       const delta = results.bundleSize.delta;
 
-      const deltaFormatted = delta > 0 ? `+${formatBytes(delta)}` : formatBytes(delta);
+      const deltaFormatted =
+        delta > 0 ? `+${formatBytes(delta)}` : formatBytes(delta);
       const deltaStatus = delta > 0 ? "INCREASE" : "DECREASE";
 
       comment += `| Size | ${formatBytes(results.bundleSize.current)} |\n`;
@@ -280,15 +377,15 @@ export class GitHubIntegration {
 
   private hasFailures(results: PerformanceResults): boolean {
     return (
-      (results.runtime?.status === "fail") ||
-      (results.bundleSize?.status === "fail")
+      results.runtime?.status === "fail" ||
+      results.bundleSize?.status === "fail"
     );
   }
 
   private hasWarnings(results: PerformanceResults): boolean {
     return (
-      (results.runtime?.status === "warn") ||
-      (results.bundleSize?.status === "warn")
+      results.runtime?.status === "warn" ||
+      results.bundleSize?.status === "warn"
     );
   }
 
@@ -296,6 +393,27 @@ export class GitHubIntegration {
     if (value <= threshold) return "PASS";
     if (value <= threshold * 1.1) return "WARN";
     return "FAIL";
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
+    const { retries, delayMs } = this.retryOptions;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        if (attempt >= retries) {
+          break;
+        }
+        if (delayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    throw lastError ?? new Error("Retry attempts exhausted");
   }
 }
 

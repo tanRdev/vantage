@@ -107,7 +107,47 @@ describe("GitHubIntegration", () => {
 
       integration.postComment(1);
 
-      expect(integration["octokit"].rest.issues.createComment).not.toHaveBeenCalled();
+      expect(
+        integration["octokit"].rest.issues.createComment,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("should retry when comment creation fails once", async () => {
+      const mockData = {
+        runtime: {
+          lcp: 1200,
+          inp: 45,
+          cls: 0.05,
+          score: 92,
+          status: "pass" as const,
+        },
+      };
+
+      const mocks = getFsMocks();
+      mocks.existsSync.mockReturnValue(true);
+      mocks.readFileSync.mockReturnValue(JSON.stringify(mockData));
+
+      const retryIntegration = new GitHubIntegration(
+        mockToken,
+        mockRepository,
+        {
+          retry: {
+            retries: 1,
+            delayMs: 0,
+          },
+        },
+      );
+
+      const createCommentMock = retryIntegration["octokit"].rest.issues
+        .createComment as any;
+      createCommentMock
+        .mockRejectedValueOnce(new Error("Transient error"))
+        .mockResolvedValueOnce({
+          data: { html_url: "https://github.com/mock/comment" },
+        });
+
+      await retryIntegration.postComment(1);
+      expect(createCommentMock).toHaveBeenCalledTimes(2);
     });
 
     it("should create formatted comment with runtime metrics", async () => {
@@ -127,7 +167,9 @@ describe("GitHubIntegration", () => {
 
       await integration.postComment(1);
 
-      expect(integration["octokit"].rest.issues.createComment).toHaveBeenCalled();
+      expect(
+        integration["octokit"].rest.issues.createComment,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -148,14 +190,16 @@ describe("GitHubIntegration", () => {
 
       await integration.setStatus("abc123");
 
-      expect(integration["octokit"].rest.repos.createCommitStatus).toHaveBeenCalledWith(
+      expect(
+        integration["octokit"].rest.repos.createCommitStatus,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           owner: "owner",
           repo: "repo",
           sha: "abc123",
           state: "success",
           context: "vantage",
-        })
+        }),
       );
     });
 
@@ -173,11 +217,13 @@ describe("GitHubIntegration", () => {
 
       await integration.setStatus("abc123");
 
-      expect(integration["octokit"].rest.repos.createCommitStatus).toHaveBeenCalledWith(
+      expect(
+        integration["octokit"].rest.repos.createCommitStatus,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           state: "failure",
           context: "vantage",
-        })
+        }),
       );
     });
 
@@ -187,7 +233,9 @@ describe("GitHubIntegration", () => {
 
       await integration.setStatus("abc123");
 
-      expect(integration["octokit"].rest.repos.createCommitStatus).not.toHaveBeenCalled();
+      expect(
+        integration["octokit"].rest.repos.createCommitStatus,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -201,7 +249,9 @@ describe("GitHubIntegration", () => {
         body: "## Performance Results\n\nAll checks passed",
       };
 
-      (integration["octokit"].rest.issues.listComments as any).mockResolvedValue({
+      (
+        integration["octokit"].rest.issues.listComments as any
+      ).mockResolvedValue({
         data: [botComment],
       });
 
@@ -211,7 +261,9 @@ describe("GitHubIntegration", () => {
     });
 
     it("should return null when no bot comment exists", async () => {
-      (integration["octokit"].rest.issues.listComments as any).mockResolvedValue({
+      (
+        integration["octokit"].rest.issues.listComments as any
+      ).mockResolvedValue({
         data: [],
       });
 
@@ -221,7 +273,9 @@ describe("GitHubIntegration", () => {
     });
 
     it("should return null on API error", async () => {
-      (integration["octokit"].rest.issues.listComments as any).mockRejectedValue(new Error("API error"));
+      (
+        integration["octokit"].rest.issues.listComments as any
+      ).mockRejectedValue(new Error("API error"));
 
       const commentId = await integration.findExistingComment(1);
 
@@ -246,7 +300,8 @@ describe("GitHubIntegration", () => {
 
         const mockCommentsPage2 = [botComment];
 
-        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        const listCommentsMock = integration["octokit"].rest.issues
+          .listComments as any;
 
         // Reset the mock to clear the default implementation
         listCommentsMock.mockReset();
@@ -284,7 +339,8 @@ describe("GitHubIntegration", () => {
           body: `Comment ${i + 1}`,
         }));
 
-        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        const listCommentsMock = integration["octokit"].rest.issues
+          .listComments as any;
         listCommentsMock.mockReset();
         listCommentsMock.mockResolvedValue({ data: mockComments });
 
@@ -318,7 +374,8 @@ describe("GitHubIntegration", () => {
 
         const mockCommentsPage3 = [botComment];
 
-        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        const listCommentsMock = integration["octokit"].rest.issues
+          .listComments as any;
         listCommentsMock.mockReset();
         listCommentsMock
           .mockResolvedValueOnce({ data: mockCommentsPage1 })
@@ -344,7 +401,8 @@ describe("GitHubIntegration", () => {
           body: `Comment ${i + 101}`,
         }));
 
-        const listCommentsMock = integration["octokit"].rest.issues.listComments as any;
+        const listCommentsMock = integration["octokit"].rest.issues
+          .listComments as any;
         listCommentsMock.mockReset();
         listCommentsMock
           .mockResolvedValueOnce({ data: mockCommentsPage1 })
@@ -360,17 +418,23 @@ describe("GitHubIntegration", () => {
 
   describe("updateComment", () => {
     it("should post new comment if none exists", async () => {
-      (integration["octokit"].rest.issues.listComments as any).mockResolvedValue({
+      (
+        integration["octokit"].rest.issues.listComments as any
+      ).mockResolvedValue({
         data: [],
       });
 
       await integration.updateComment(1);
 
-      expect(integration["octokit"].rest.issues.updateComment).not.toHaveBeenCalled();
+      expect(
+        integration["octokit"].rest.issues.updateComment,
+      ).not.toHaveBeenCalled();
     });
 
     it("should handle API errors gracefully", async () => {
-      (integration["octokit"].rest.issues.listComments as any).mockRejectedValue(new Error("API error"));
+      (
+        integration["octokit"].rest.issues.listComments as any
+      ).mockRejectedValue(new Error("API error"));
 
       await integration.updateComment(1);
     });

@@ -1,8 +1,9 @@
-import { beforeAll, afterEach, afterAll, vi } from 'vitest'
+import { beforeAll, afterEach, afterAll, vi } from "vitest";
+import "@testing-library/jest-dom";
 
 // Global ResizeObserver mock tracking
 declare global {
-  var __resizeObserverInstances: any[]
+  var __resizeObserverInstances: any[];
 }
 
 beforeAll(() => {
@@ -10,7 +11,7 @@ beforeAll(() => {
 
   // Create a trackable ResizeObserver mock
   const createResizeObserverMock = () => {
-    globalThis.__resizeObserverInstances = []
+    globalThis.__resizeObserverInstances = [];
 
     class MockResizeObserver {
       constructor(callback: ResizeObserverCallback) {
@@ -19,23 +20,23 @@ beforeAll(() => {
           unobserve: vi.fn(),
           disconnect: vi.fn(),
           callback,
-        }
-        globalThis.__resizeObserverInstances.push(instance)
+        };
+        globalThis.__resizeObserverInstances.push(instance);
       }
     }
 
     // @ts-ignore
-    global.ResizeObserver = MockResizeObserver
-  }
+    global.ResizeObserver = MockResizeObserver;
+  };
 
-  createResizeObserverMock()
-})
+  createResizeObserverMock();
+});
 
 afterEach(() => {
   // Cleanup after each test
-  globalThis.__resizeObserverInstances = []
-})
+  globalThis.__resizeObserverInstances = [];
+});
 
 afterAll(() => {
   // Cleanup after all tests
-})
+});

@@ -6,55 +6,76 @@ import type {
   StatsResponse,
   BundleTrendsResponse,
   QueryParams,
-} from '@/types/api'
+} from "@/types/api";
+import type { BundleDiff } from "@/types/bundle";
 
-const API_BASE = '/api'
+const API_BASE = "/api";
 
 async function fetchWithErrorHandling<T>(
   url: string,
-  params?: QueryParams
+  params?: QueryParams,
 ): Promise<T> {
   const queryString =
     params && Object.keys(params).length > 0
-      ? '?' +
+      ? "?" +
         new URLSearchParams(
           Object.entries(params).filter(
-            ([_, v]) => v !== undefined && v !== null
-          ) as [string, string][]
+            ([_, v]) => v !== undefined && v !== null,
+          ) as [string, string][],
         ).toString()
-      : ''
+      : "";
 
-  const response = await fetch(`${API_BASE}${url}${queryString}`)
+  const response = await fetch(`${API_BASE}${url}${queryString}`);
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`)
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json()
+  return response.json();
+}
+
+interface BundleDiffResponse {
+  success: boolean;
+  data?: BundleDiff;
+  error?: string;
 }
 
 export const api = {
   getMetrics: async (params?: QueryParams): Promise<MetricsResponse> => {
-    return fetchWithErrorHandling<MetricsResponse>('/metrics', params)
+    return fetchWithErrorHandling<MetricsResponse>("/metrics", params);
   },
 
   getBundles: async (params?: QueryParams): Promise<BundlesResponse> => {
-    return fetchWithErrorHandling<BundlesResponse>('/bundles', params)
+    return fetchWithErrorHandling<BundlesResponse>("/bundles", params);
   },
 
   getRoutes: async (params?: QueryParams): Promise<RoutesResponse> => {
-    return fetchWithErrorHandling<RoutesResponse>('/routes', params)
+    return fetchWithErrorHandling<RoutesResponse>("/routes", params);
   },
 
   getBuilds: async (params?: QueryParams): Promise<BuildsResponse> => {
-    return fetchWithErrorHandling<BuildsResponse>('/builds', params)
+    return fetchWithErrorHandling<BuildsResponse>("/builds", params);
   },
 
   getStats: async (): Promise<StatsResponse> => {
-    return fetchWithErrorHandling<StatsResponse>('/stats')
+    return fetchWithErrorHandling<StatsResponse>("/stats");
   },
 
-  getBundleTrends: async (params?: QueryParams): Promise<BundleTrendsResponse> => {
-    return fetchWithErrorHandling<BundleTrendsResponse>('/trends/bundles', params)
+  getBundleTrends: async (
+    params?: QueryParams,
+  ): Promise<BundleTrendsResponse> => {
+    return fetchWithErrorHandling<BundleTrendsResponse>(
+      "/trends/bundles",
+      params,
+    );
   },
-}
+
+  getBundleDiff: async (
+    buildAId: number,
+    buildBId: number,
+  ): Promise<BundleDiffResponse> => {
+    return fetchWithErrorHandling<BundleDiffResponse>(
+      `/diff/bundles?buildA=${buildAId}&buildB=${buildBId}`,
+    );
+  },
+};

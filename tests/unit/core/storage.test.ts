@@ -75,7 +75,9 @@ describe("Storage", () => {
       const afterCloseBeforeExitCount = process.listenerCount("beforeExit");
 
       // The beforeExit handler should be unregistered
-      expect(afterCloseBeforeExitCount).toBeLessThan(afterCreateBeforeExitCount);
+      expect(afterCloseBeforeExitCount).toBeLessThan(
+        afterCreateBeforeExitCount,
+      );
     });
 
     it("should return the same instance when calling getStorage multiple times", () => {
@@ -95,8 +97,12 @@ describe("Storage", () => {
   });
 
   describe("getRuntimeTrend", () => {
-    const validMetrics: Array<keyof Pick<RuntimeMetricRecord, "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score">> =
-      ["lcp", "inp", "cls", "fcp", "ttfb", "score"];
+    const validMetrics: Array<
+      keyof Pick<
+        RuntimeMetricRecord,
+        "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score"
+      >
+    > = ["lcp", "inp", "cls", "fcp", "ttfb", "score"];
 
     it("should accept all valid metric names", () => {
       // Insert test data
@@ -123,7 +129,9 @@ describe("Storage", () => {
 
     it("should throw error for invalid column names (SQL injection protection)", () => {
       // Insert test data
-      const testData: Omit<RuntimeMetricRecord, "id">[] = [
+      const testData: Array<
+        Omit<RuntimeMetricRecord, "id"> & { lcp: number | null }
+      > = [
         {
           timestamp: Date.now(),
           branch: "main",
@@ -145,14 +153,16 @@ describe("Storage", () => {
 
       for (const maliciousInput of injectionAttempts) {
         expect(() =>
-          storage.getRuntimeTrend("main", maliciousInput as any)
+          storage.getRuntimeTrend("main", maliciousInput as any),
         ).toThrow(/invalid metric/i);
       }
     });
 
     it("should return correct data for valid metric", () => {
       const now = Date.now();
-      const testData: Omit<RuntimeMetricRecord, "id">[] = [
+      const testData: Array<
+        Omit<RuntimeMetricRecord, "id"> & { lcp: number | null }
+      > = [
         {
           timestamp: now - 2000,
           branch: "main",
@@ -184,7 +194,9 @@ describe("Storage", () => {
 
     it("should filter out NULL values", () => {
       const now = Date.now();
-      const testData: Omit<RuntimeMetricRecord, "id">[] = [
+      const testData: Array<
+        Omit<RuntimeMetricRecord, "id"> & { lcp: number | null }
+      > = [
         {
           timestamp: now - 2000,
           branch: "main",
@@ -194,7 +206,7 @@ describe("Storage", () => {
         {
           timestamp: now - 1000,
           branch: "main",
-          lcp: null, // This should be filtered out
+          lcp: null as unknown as number, // This should be filtered out
           status: "pass",
         },
         {
@@ -216,12 +228,15 @@ describe("Storage", () => {
 
     it("should respect the limit parameter", () => {
       const now = Date.now();
-      const testData: Omit<RuntimeMetricRecord, "id">[] = Array.from({ length: 50 }, (_, i) => ({
-        timestamp: now - (49 - i) * 1000,
-        branch: "main",
-        lcp: 1000 + i * 10,
-        status: "pass",
-      }));
+      const testData: Omit<RuntimeMetricRecord, "id">[] = Array.from(
+        { length: 50 },
+        (_, i) => ({
+          timestamp: now - (49 - i) * 1000,
+          branch: "main",
+          lcp: 1000 + i * 10,
+          status: "pass",
+        }),
+      );
       storage.saveRuntimeMetrics(testData);
 
       const result = storage.getRuntimeTrend("main", "lcp", 10);
@@ -639,10 +654,34 @@ describe("Storage", () => {
     beforeEach(() => {
       const now = Date.now();
       const records: Omit<CheckRecord, "id">[] = [
-        { timestamp: now - 3000, branch: "main", checkType: "runtime", status: "pass", duration: 1000 },
-        { timestamp: now - 2000, branch: "main", checkType: "bundle", status: "pass", duration: 500 },
-        { timestamp: now - 1000, branch: "feature", checkType: "full", status: "fail", duration: 2000 },
-        { timestamp: now, branch: "main", checkType: "runtime", status: "warn", duration: 1200 },
+        {
+          timestamp: now - 3000,
+          branch: "main",
+          checkType: "runtime",
+          status: "pass",
+          duration: 1000,
+        },
+        {
+          timestamp: now - 2000,
+          branch: "main",
+          checkType: "bundle",
+          status: "pass",
+          duration: 500,
+        },
+        {
+          timestamp: now - 1000,
+          branch: "feature",
+          checkType: "full",
+          status: "fail",
+          duration: 2000,
+        },
+        {
+          timestamp: now,
+          branch: "main",
+          checkType: "runtime",
+          status: "warn",
+          duration: 1200,
+        },
       ];
       for (const record of records) {
         storage.saveCheckRecord(record);
@@ -719,6 +758,19 @@ describe("Storage", () => {
       const previous = storage.getPreviousRuntimeMetrics("main");
       expect(previous).toBeUndefined();
     });
+
+    it("should ignore chunk name filter", () => {
+      const now = Date.now();
+      storage.saveRuntimeMetrics([
+        { timestamp: now - 1000, branch: "main", lcp: 900, status: "pass" },
+        { timestamp: now, branch: "main", lcp: 1000, status: "pass" },
+      ]);
+
+      const previous = storage.getPreviousRuntimeMetrics("main", "app.js");
+
+      expect(previous).not.toBeUndefined();
+      expect(previous!.lcp).toBe(1000);
+    });
   });
 
   describe("getPreviousBundleMetrics", () => {
@@ -764,7 +816,10 @@ describe("Storage", () => {
     });
 
     it("should return undefined when no metrics exist for branch and chunk", () => {
-      const previous = storage.getPreviousBundleMetrics("main", "nonexistent.js");
+      const previous = storage.getPreviousBundleMetrics(
+        "main",
+        "nonexistent.js",
+      );
       expect(previous).toBeUndefined();
     });
 
@@ -866,9 +921,27 @@ describe("Storage", () => {
       const now = Date.now();
       const cutoff = now - 1500;
       const records: Omit<CheckRecord, "id">[] = [
-        { timestamp: now - 3000, branch: "main", checkType: "runtime", status: "pass", duration: 1000 },
-        { timestamp: now - 2000, branch: "main", checkType: "runtime", status: "pass", duration: 1000 },
-        { timestamp: now - 1000, branch: "main", checkType: "runtime", status: "pass", duration: 1000 },
+        {
+          timestamp: now - 3000,
+          branch: "main",
+          checkType: "runtime",
+          status: "pass",
+          duration: 1000,
+        },
+        {
+          timestamp: now - 2000,
+          branch: "main",
+          checkType: "runtime",
+          status: "pass",
+          duration: 1000,
+        },
+        {
+          timestamp: now - 1000,
+          branch: "main",
+          checkType: "runtime",
+          status: "pass",
+          duration: 1000,
+        },
       ];
       for (const record of records) {
         storage.saveCheckRecord(record);
@@ -885,7 +958,9 @@ describe("Storage", () => {
       const now = Date.now();
       const cutoff = now - 1500;
 
-      storage.saveRuntimeMetrics([{ timestamp: now - 2000, branch: "main", lcp: 1000, status: "pass" }]);
+      storage.saveRuntimeMetrics([
+        { timestamp: now - 2000, branch: "main", lcp: 1000, status: "pass" },
+      ]);
       storage.saveBundleMetrics([
         {
           timestamp: now - 2000,
@@ -971,7 +1046,9 @@ describe("Storage", () => {
     });
 
     it("should clear all tables at once", () => {
-      storage.saveRuntimeMetrics([{ timestamp: Date.now(), branch: "main", lcp: 1000, status: "pass" }]);
+      storage.saveRuntimeMetrics([
+        { timestamp: Date.now(), branch: "main", lcp: 1000, status: "pass" },
+      ]);
       storage.saveBundleMetrics([
         {
           timestamp: Date.now(),
@@ -1054,7 +1131,9 @@ describe("Storage", () => {
     });
 
     it("should deduplicate branches across tables", () => {
-      storage.saveRuntimeMetrics([{ timestamp: Date.now(), branch: "main", lcp: 1000, status: "pass" }]);
+      storage.saveRuntimeMetrics([
+        { timestamp: Date.now(), branch: "main", lcp: 1000, status: "pass" },
+      ]);
       storage.saveBundleMetrics([
         {
           timestamp: Date.now(),
@@ -1095,12 +1174,15 @@ describe("Storage", () => {
     });
 
     it("should return correct runtime metrics count", () => {
-      const metrics: Omit<RuntimeMetricRecord, "id">[] = Array.from({ length: 5 }, (_, i) => ({
-        timestamp: Date.now() + i,
-        branch: "main",
-        lcp: 1000 + i,
-        status: "pass",
-      }));
+      const metrics: Omit<RuntimeMetricRecord, "id">[] = Array.from(
+        { length: 5 },
+        (_, i) => ({
+          timestamp: Date.now() + i,
+          branch: "main",
+          lcp: 1000 + i,
+          status: "pass",
+        }),
+      );
       storage.saveRuntimeMetrics(metrics);
 
       const stats = storage.getStats();
@@ -1108,15 +1190,18 @@ describe("Storage", () => {
     });
 
     it("should return correct bundle metrics count", () => {
-      const metrics: Omit<BundleMetricRecord, "id">[] = Array.from({ length: 3 }, (_, i) => ({
-        timestamp: Date.now() + i,
-        branch: "main",
-        chunkName: `chunk${i}.js`,
-        oldSize: 1000,
-        newSize: 1100,
-        delta: 100,
-        status: "pass",
-      }));
+      const metrics: Omit<BundleMetricRecord, "id">[] = Array.from(
+        { length: 3 },
+        (_, i) => ({
+          timestamp: Date.now() + i,
+          branch: "main",
+          chunkName: `chunk${i}.js`,
+          oldSize: 1000,
+          newSize: 1100,
+          delta: 100,
+          status: "pass",
+        }),
+      );
       storage.saveBundleMetrics(metrics);
 
       const stats = storage.getStats();
@@ -1219,7 +1304,12 @@ describe("Storage", () => {
     });
 
     it("should handle special characters in branch names", () => {
-      const specialBranches = ["feature/branch-123", "release/v1.0.0", "user@domain", "branch_with_underscore"];
+      const specialBranches = [
+        "feature/branch-123",
+        "release/v1.0.0",
+        "user@domain",
+        "branch_with_underscore",
+      ];
 
       for (const branch of specialBranches) {
         storage.saveRuntimeMetrics([
@@ -1326,7 +1416,11 @@ describe("Storage", () => {
     });
 
     it("should handle status enum values", () => {
-      const statuses: Array<"pass" | "warn" | "fail"> = ["pass", "warn", "fail"];
+      const statuses: Array<"pass" | "warn" | "fail"> = [
+        "pass",
+        "warn",
+        "fail",
+      ];
 
       for (const status of statuses) {
         storage.saveCheckRecord({
@@ -1346,7 +1440,11 @@ describe("Storage", () => {
     });
 
     it("should handle checkType enum values", () => {
-      const checkTypes: Array<"runtime" | "bundle" | "full"> = ["runtime", "bundle", "full"];
+      const checkTypes: Array<"runtime" | "bundle" | "full"> = [
+        "runtime",
+        "bundle",
+        "full",
+      ];
 
       for (const checkType of checkTypes) {
         storage.saveCheckRecord({
@@ -1465,14 +1563,17 @@ describe("Storage", () => {
 
     it("should respect the limit parameter", () => {
       const now = Date.now();
-      const metrics: Omit<BundleMetricRecord, "id">[] = Array.from({ length: 50 }, (_, i) => ({
-        timestamp: now - (49 - i) * 1000,
-        branch: "main",
-        chunkName: "app.js",
-        newSize: 1000 + i * 10,
-        delta: 10,
-        status: "pass",
-      }));
+      const metrics: Omit<BundleMetricRecord, "id">[] = Array.from(
+        { length: 50 },
+        (_, i) => ({
+          timestamp: now - (49 - i) * 1000,
+          branch: "main",
+          chunkName: "app.js",
+          newSize: 1000 + i * 10,
+          delta: 10,
+          status: "pass",
+        }),
+      );
       storage.saveBundleMetrics(metrics);
 
       const trend = storage.getBundleTrend("main", "app.js", 10);
@@ -1564,7 +1665,7 @@ describe("Storage", () => {
       for (let i = 0; i < 20; i++) {
         for (const chunk of chunks) {
           metrics.push({
-            timestamp: now - (index++) * 1000,
+            timestamp: now - index++ * 1000,
             branch: "main",
             chunkName: chunk,
             newSize: 1000 + index,

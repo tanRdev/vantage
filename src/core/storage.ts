@@ -24,10 +24,12 @@ type ValidRuntimeMetric = "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score";
  * @param metric - The metric name to validate
  * @throws {Error} If the metric name is not in the allowlist
  */
-function validateMetricColumn(metric: string): asserts metric is ValidRuntimeMetric {
+function validateMetricColumn(
+  metric: string,
+): asserts metric is ValidRuntimeMetric {
   if (!VALID_RUNTIME_METRICS.has(metric as ValidRuntimeMetric)) {
     throw new Error(
-      `Invalid metric: "${metric}". Must be one of: lcp, inp, cls, fcp, ttfb, score`
+      `Invalid metric: "${metric}". Must be one of: lcp, inp, cls, fcp, ttfb, score`,
     );
   }
 }
@@ -172,63 +174,61 @@ export class Storage {
     `);
   }
 
-  saveRuntimeMetrics(
-    metrics: Omit<RuntimeMetricRecord, "id">[]
-  ): void {
+  saveRuntimeMetrics(metrics: Omit<RuntimeMetricRecord, "id">[]): void {
     const stmt = this.db.prepare(`
       INSERT INTO runtime_metrics (timestamp, branch, "commit", lcp, inp, cls, fcp, ttfb, score, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const insertMany = this.db.transaction((records: Omit<RuntimeMetricRecord, "id">[]) => {
-      for (const record of records) {
-        stmt.run(
-          record.timestamp,
-          record.branch,
-          record.commit || null,
-          record.lcp || null,
-          record.inp || null,
-          record.cls || null,
-          record.fcp || null,
-          record.ttfb || null,
-          record.score || null,
-          record.status
-        );
-      }
-    });
+    const insertMany = this.db.transaction(
+      (records: Omit<RuntimeMetricRecord, "id">[]) => {
+        for (const record of records) {
+          stmt.run(
+            record.timestamp,
+            record.branch,
+            record.commit || null,
+            record.lcp || null,
+            record.inp || null,
+            record.cls || null,
+            record.fcp || null,
+            record.ttfb || null,
+            record.score || null,
+            record.status,
+          );
+        }
+      },
+    );
 
     insertMany(metrics);
   }
 
-  saveBundleMetrics(
-    metrics: Omit<BundleMetricRecord, "id">[]
-  ): void {
+  saveBundleMetrics(metrics: Omit<BundleMetricRecord, "id">[]): void {
     const stmt = this.db.prepare(`
       INSERT INTO bundle_metrics (timestamp, branch, "commit", chunk_name, old_size, new_size, delta, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const insertMany = this.db.transaction((records: Omit<BundleMetricRecord, "id">[]) => {
-      for (const record of records) {
-        stmt.run(
-          record.timestamp,
-          record.branch,
-          record.commit || null,
-          record.chunkName,
-          record.oldSize || null,
-          record.newSize,
-          record.delta,
-          record.status
-        );
-      }
-    });
+    const insertMany = this.db.transaction(
+      (records: Omit<BundleMetricRecord, "id">[]) => {
+        for (const record of records) {
+          stmt.run(
+            record.timestamp,
+            record.branch,
+            record.commit || null,
+            record.chunkName,
+            record.oldSize || null,
+            record.newSize,
+            record.delta,
+            record.status,
+          );
+        }
+      },
+    );
 
     insertMany(metrics);
   }
 
-  saveCheckRecord(
-    record: Omit<CheckRecord, "id">
-  ): void {
+  saveCheckRecord(record: Omit<CheckRecord, "id">): void {
     const stmt = this.db.prepare(`
       INSERT INTO check_records (timestamp, branch, "commit", check_type, status, duration)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -240,13 +240,13 @@ export class Storage {
       record.commit || null,
       record.checkType,
       record.status,
-      record.duration
+      record.duration,
     );
   }
 
   getRuntimeHistory(
     branch?: string,
-    limit: number = 50
+    limit: number = 50,
   ): RuntimeMetricRecord[] {
     let query = "SELECT * FROM runtime_metrics";
     const params: (string | number)[] = [];
@@ -263,10 +263,7 @@ export class Storage {
     return stmt.all(...params) as RuntimeMetricRecord[];
   }
 
-  getBundleHistory(
-    branch?: string,
-    limit: number = 50
-  ): BundleMetricRecord[] {
+  getBundleHistory(branch?: string, limit: number = 50): BundleMetricRecord[] {
     let query = "SELECT * FROM bundle_metrics";
     const params: (string | number)[] = [];
 
@@ -282,10 +279,7 @@ export class Storage {
     return stmt.all(...params) as BundleMetricRecord[];
   }
 
-  getCheckHistory(
-    branch?: string,
-    limit: number = 50
-  ): CheckRecord[] {
+  getCheckHistory(branch?: string, limit: number = 50): CheckRecord[] {
     let query = "SELECT * FROM check_records";
     const params: (string | number)[] = [];
 
@@ -303,15 +297,10 @@ export class Storage {
 
   getPreviousRuntimeMetrics(
     branch: string,
-    chunkName?: string
+    _chunkName?: string,
   ): RuntimeMetricRecord | null {
     let query = "SELECT * FROM runtime_metrics WHERE branch = ?";
     const params: (string | number)[] = [branch];
-
-    if (chunkName) {
-      query += " AND chunk_name = ?";
-      params.push(chunkName);
-    }
 
     query += " ORDER BY timestamp DESC LIMIT 1";
 
@@ -321,7 +310,7 @@ export class Storage {
 
   getPreviousBundleMetrics(
     branch: string,
-    chunkName: string
+    chunkName: string,
   ): BundleMetricRecord | null {
     const stmt = this.db.prepare(`
       SELECT * FROM bundle_metrics
@@ -334,8 +323,11 @@ export class Storage {
 
   getRuntimeTrend(
     branch: string,
-    metric: keyof Pick<RuntimeMetricRecord, "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score">,
-    limit: number = 30
+    metric: keyof Pick<
+      RuntimeMetricRecord,
+      "lcp" | "inp" | "cls" | "fcp" | "ttfb" | "score"
+    >,
+    limit: number = 30,
   ): Array<{ timestamp: number; value: number }> {
     // Validate the metric column name at runtime to prevent SQL injection
     validateMetricColumn(metric);
@@ -347,13 +339,16 @@ export class Storage {
       ORDER BY timestamp ASC LIMIT ?
     `);
 
-    return stmt.all(branch, limit) as Array<{ timestamp: number; value: number }>;
+    return stmt.all(branch, limit) as Array<{
+      timestamp: number;
+      value: number;
+    }>;
   }
 
   getBundleTrend(
     branch: string,
     chunkName: string,
-    limit: number = 30
+    limit: number = 30,
   ): Array<{ timestamp: number; value: number }> {
     const stmt = this.db.prepare(`
       SELECT timestamp, new_size as value FROM bundle_metrics
@@ -361,12 +356,15 @@ export class Storage {
       ORDER BY timestamp ASC LIMIT ?
     `);
 
-    return stmt.all(branch, chunkName, limit) as Array<{ timestamp: number; value: number }>;
+    return stmt.all(branch, chunkName, limit) as Array<{
+      timestamp: number;
+      value: number;
+    }>;
   }
 
   getAllBundleTrends(
     branch: string,
-    limit: number = 30
+    limit: number = 30,
   ): Array<{ chunkName: string; timestamp: number; value: number }> {
     const stmt = this.db.prepare(`
       SELECT chunk_name, timestamp, new_size as value FROM bundle_metrics
@@ -374,8 +372,12 @@ export class Storage {
       ORDER BY timestamp DESC LIMIT ?
     `);
 
-    const rows = stmt.all(branch, limit) as Array<{ chunk_name: string; timestamp: number; value: number }>;
-    return rows.map(row => ({
+    const rows = stmt.all(branch, limit) as Array<{
+      chunk_name: string;
+      timestamp: number;
+      value: number;
+    }>;
+    return rows.map((row) => ({
       chunkName: row.chunk_name,
       timestamp: row.timestamp,
       value: row.value,
@@ -395,9 +397,15 @@ export class Storage {
   }
 
   deleteOldRecords(beforeTimestamp: number): void {
-    const deleteRuntime = this.db.prepare("DELETE FROM runtime_metrics WHERE timestamp < ?");
-    const deleteBundle = this.db.prepare("DELETE FROM bundle_metrics WHERE timestamp < ?");
-    const deleteChecks = this.db.prepare("DELETE FROM check_records WHERE timestamp < ?");
+    const deleteRuntime = this.db.prepare(
+      "DELETE FROM runtime_metrics WHERE timestamp < ?",
+    );
+    const deleteBundle = this.db.prepare(
+      "DELETE FROM bundle_metrics WHERE timestamp < ?",
+    );
+    const deleteChecks = this.db.prepare(
+      "DELETE FROM check_records WHERE timestamp < ?",
+    );
 
     const transaction = this.db.transaction(() => {
       deleteRuntime.run(beforeTimestamp);
@@ -429,9 +437,15 @@ export class Storage {
     checkRecordsCount: number;
     branches: string[];
   } {
-    const runtimeCount = this.db.prepare("SELECT COUNT(*) as count FROM runtime_metrics").get() as { count: number };
-    const bundleCount = this.db.prepare("SELECT COUNT(*) as count FROM bundle_metrics").get() as { count: number };
-    const checksCount = this.db.prepare("SELECT COUNT(*) as count FROM check_records").get() as { count: number };
+    const runtimeCount = this.db
+      .prepare("SELECT COUNT(*) as count FROM runtime_metrics")
+      .get() as { count: number };
+    const bundleCount = this.db
+      .prepare("SELECT COUNT(*) as count FROM bundle_metrics")
+      .get() as { count: number };
+    const checksCount = this.db
+      .prepare("SELECT COUNT(*) as count FROM check_records")
+      .get() as { count: number };
 
     return {
       runtimeMetricsCount: runtimeCount.count,

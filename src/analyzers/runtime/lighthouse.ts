@@ -114,7 +114,6 @@ export class LighthouseRunner {
 
       const child = spawn(command, args, {
         cwd: process.cwd(),
-        shell: true,
         timeout: 120000,
       });
 

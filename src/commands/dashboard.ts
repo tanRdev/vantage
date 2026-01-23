@@ -19,8 +19,7 @@ export default class Dashboard extends Command {
   async run(): Promise<void> {
     const args = process.argv.slice(2);
     const deployFlag = args.includes("--deploy") || args.includes("-d");
-    const portIndex = args.indexOf("--port") || args.indexOf("-p");
-    const port = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : 3000;
+    const port = resolveDashboardPort(args);
 
     if (deployFlag) {
       Reporter.info("Deploying dashboard to GitHub Pages...");
@@ -29,7 +28,9 @@ export default class Dashboard extends Command {
         // Validate the dashboard path before using it
         const validatedPath = validateAndResolveDashboardPath("dashboard");
         if (!validatedPath) {
-          Reporter.error("Dashboard directory not found or invalid. Run from project root.");
+          Reporter.error(
+            "Dashboard directory not found or invalid. Run from project root.",
+          );
           process.exit(1);
         }
 
@@ -70,14 +71,18 @@ export default class Dashboard extends Command {
         // Validate the dashboard path before using it
         const validatedPath = validateAndResolveDashboardPath("dashboard");
         if (!validatedPath) {
-          Reporter.error("Dashboard directory not found or invalid. Run from project root.");
+          Reporter.error(
+            "Dashboard directory not found or invalid. Run from project root.",
+          );
           process.exit(1);
         }
 
         // Verify package.json exists
         const packageJsonPath = path.join(validatedPath, "package.json");
         if (!fs.existsSync(packageJsonPath)) {
-          Reporter.error("Dashboard package.json not found. Is the dashboard properly set up?");
+          Reporter.error(
+            "Dashboard package.json not found. Is the dashboard properly set up?",
+          );
           process.exit(1);
         }
 
@@ -113,7 +118,6 @@ export default class Dashboard extends Command {
         };
 
         process.on("SIGINT", Dashboard.sigintHandler);
-
       } catch (error) {
         Reporter.error("Failed to start dashboard", error as Error);
         process.exit(1);
@@ -121,3 +125,21 @@ export default class Dashboard extends Command {
     }
   }
 }
+
+export const resolveDashboardPort = (
+  args: string[],
+  defaultPort = 3000,
+): number => {
+  const longIndex = args.indexOf("--port");
+  const shortIndex = args.indexOf("-p");
+  const portIndex = longIndex !== -1 ? longIndex : shortIndex;
+
+  if (portIndex === -1) {
+    return defaultPort;
+  }
+
+  const rawPort = args[portIndex + 1];
+  const parsedPort = Number.parseInt(rawPort ?? "", 10);
+
+  return Number.isFinite(parsedPort) ? parsedPort : defaultPort;
+};

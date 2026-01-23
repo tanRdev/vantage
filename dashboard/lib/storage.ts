@@ -51,6 +51,21 @@ export interface BundleMetricRecord {
   status: "pass" | "warn" | "fail";
 }
 
+interface BundleMetricRow {
+  id: number;
+  timestamp: number;
+  branch: string;
+  commit?: string;
+  chunkName?: string;
+  chunk_name?: string;
+  oldSize?: number | null;
+  old_size?: number | null;
+  newSize?: number;
+  new_size?: number;
+  delta: number;
+  status: "pass" | "warn" | "fail";
+}
+
 export interface CheckRecord {
   id: number;
   timestamp: number;
@@ -104,9 +119,9 @@ class DashboardStorage {
         timestamp INTEGER NOT NULL,
         branch TEXT NOT NULL,
         "commit" TEXT,
-        chunkName TEXT NOT NULL,
-        oldSize REAL,
-        newSize REAL NOT NULL,
+        chunk_name TEXT NOT NULL,
+        old_size REAL,
+        new_size REAL NOT NULL,
         delta REAL NOT NULL,
         status TEXT NOT NULL
       );
@@ -149,7 +164,7 @@ class DashboardStorage {
 
     // Mock bundle metrics
     const bundleStmt = mockDb.prepare(`
-      INSERT INTO bundle_metrics (timestamp, branch, chunkName, newSize, delta, status)
+      INSERT INTO bundle_metrics (timestamp, branch, chunk_name, new_size, delta, status)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
@@ -210,7 +225,8 @@ class DashboardStorage {
     params.push(limit);
 
     const stmt = this.db.prepare(query);
-    return stmt.all(...params) as BundleMetricRecord[];
+    const rows = stmt.all(...params) as BundleMetricRow[];
+    return rows.map((row) => this.normalizeBundleRecord(row));
   }
 
   getBundlesByBuildId(buildId: number): BundleMetricRecord[] {
@@ -218,7 +234,8 @@ class DashboardStorage {
       SELECT * FROM bundle_metrics
       WHERE id = ?
     `);
-    return stmt.all(buildId) as BundleMetricRecord[];
+    const rows = stmt.all(buildId) as BundleMetricRow[];
+    return rows.map((row) => this.normalizeBundleRecord(row));
   }
 
   getBundlesByTimestamp(timestamp: number): BundleMetricRecord[] {
@@ -226,7 +243,8 @@ class DashboardStorage {
       SELECT * FROM bundle_metrics
       WHERE timestamp = ?
     `);
-    return stmt.all(timestamp) as BundleMetricRecord[];
+    const rows = stmt.all(timestamp) as BundleMetricRow[];
+    return rows.map((row) => this.normalizeBundleRecord(row));
   }
 
   getCheckHistory(branch?: string, limit: number = 50): CheckRecord[] {
@@ -341,6 +359,20 @@ class DashboardStorage {
 
   close(): void {
     this.db.close();
+  }
+
+  private normalizeBundleRecord(row: BundleMetricRow): BundleMetricRecord {
+    return {
+      id: row.id,
+      timestamp: row.timestamp,
+      branch: row.branch,
+      commit: row.commit ?? undefined,
+      chunkName: row.chunkName ?? row.chunk_name ?? "",
+      oldSize: row.oldSize ?? row.old_size ?? undefined,
+      newSize: row.newSize ?? row.new_size ?? 0,
+      delta: row.delta,
+      status: row.status,
+    };
   }
 }
 

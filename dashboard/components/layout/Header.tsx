@@ -23,7 +23,7 @@ export function Header() {
             <span className="absolute inset-0 bg-status-purple/20 blur-md rounded-full" />
           </div>
           <Link href="/" className="flex items-center">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-status-purple to-primary bg-clip-text text-transparent text-all-caps-tight">
+            <h1 className="text-lg font-bold text-all-caps-tight">
               VANTAGE
             </h1>
           </Link>

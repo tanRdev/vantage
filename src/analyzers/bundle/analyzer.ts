@@ -125,7 +125,7 @@ export class BundleAnalyzer {
       let regex: RegExp;
       try {
         regex = new RegExp(budget.path);
-      } catch (e) {
+      } catch {
         throw new Error(`Invalid regex pattern in budget: ${budget.path}`);
       }
 

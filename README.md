@@ -2,67 +2,66 @@
 
   <img src="docs/assets/logo.png" alt="Vantage Logo" width="120" />
 
-  # ⚡ Vantage
+  # Vantage
 
-  ### 🎯 Performance budget enforcement for Next.js apps
+  ### Performance budget enforcement for Next.js apps
 
   [![npm version](https://badge.fury.io/js/vantage.svg)](https://www.npmjs.com/package/vantage)
   [![License: MIT](https://img.shields.io/badge/License/MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
   [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 
-  **Deep bundle analysis • Runtime metrics • Beautiful dashboard • CI/CD integration**
+  **Deep bundle analysis · Runtime metrics · Beautiful dashboard · CI/CD integration**
 
 </div>
 
 ---
 
-## ✨ Features
+## Features
 
-### 📦 Bundle Analysis
+### Bundle Analysis
 
 - **Deep module-level breakdown** — See exactly what's in your bundles
-- **🌳 Interactive treemap visualization** — D3.js-powered visual exploration
-- **📊 Bundle diff vs baseline** — Track changes over time
-- **🎯 Smart budget enforcement** — Absolute and percentage thresholds
-- **🔍 Duplicate code detection** — Find redundant code across chunks
-- **💀 Dead code identification** — Spot unused exports and dependencies
-- **📏 Per-chunk size limits** — Fine-grained control
+- **Interactive treemap visualization** — D3.js-powered visual exploration
+- **Bundle diff vs baseline** — Track changes over time
+- **Smart budget enforcement** — Absolute and percentage thresholds
+- **Duplicate code detection** — Find redundant code across chunks
+- **Dead code identification** — Spot unused exports and dependencies
+- **Per-chunk size limits** — Fine-grained control
 
-### ⚡ Runtime Performance
+### Runtime Performance
 
-- **🔬 Lighthouse integration** — Multi-route automated testing
-- **📈 Core Web Vitals** — LCP, INP, CLS, FCP, TTFB tracking
-- **🎯 Smart route detection** — App Router + Pages Router support
-- **🔄 Dynamic pattern handling** — `[id]`, `[...slug]` automatically detected
-- **⚙️ ISR/SSG detection** — Know your rendering strategy
-- **📊 Historical trends** — Performance data over time
+- **Lighthouse integration** — Multi-route automated testing
+- **Core Web Vitals** — LCP, INP, CLS, FCP, TTFB tracking
+- **Smart route detection** — App Router + Pages Router support
+- **Dynamic pattern handling** — `[id]`, `[...slug]` automatically detected
+- **ISR/SSG detection** — Know your rendering strategy
+- **Historical trends** — Performance data over time
 
-### 🎨 Dashboard
+### Dashboard
 
-> A modern, beautiful performance monitoring dashboard built with Next.js 15 and shadcn/ui
+> A modern performance monitoring dashboard built with Next.js 15 and shadcn/ui
 
-- **🌙 Dark mode support** — System preference detection + toggle
-- **📈 Real-time data visualization** — Live updates via WebSocket
-- **📊 Trend charts** — Recharts-powered metric graphs
-- **🗺 Interactive treemaps** — Explore bundle composition visually
-- **🔍 Search & filter** — Find what you need instantly
-- **📤 Export data** — CSV/JSON exports for further analysis
-- **⌨️ Keyboard navigation** — Fully accessible interface
-- **📱 Responsive design** — Works on any device
+- **Dark theme** — Clean, data-focused interface
+- **Real-time data visualization** — Live updates via Server-Sent Events
+- **Trend charts** — Recharts-powered metric graphs
+- **Interactive treemaps** — Explore bundle composition visually
+- **Search & filter** — Find what you need instantly
+- **Keyboard navigation** — Fully accessible interface
+- **Responsive design** — Works on any device
 
-### 🤖 CI/CD Integration
+### CI/CD Integration
 
-- **🔧 GitHub Actions workflow** — Drop-in integration
-- **💬 PR comment generation** — Formatted results tables
-- **✅ Status check integration** — Pass/fail on PR
-- **📉 Baseline comparison** — Track regressions automatically
-- **🔄 Multi-run Lighthouse** — Median values for accuracy
-- **📦 Artifact uploads** — Detailed results preserved
+- **GitHub Actions workflow** — Drop-in integration
+- **PR comment generation** — Formatted results tables
+- **Status check integration** — Pass/fail on PR
+- **Baseline comparison** — Track regressions automatically
+- **Multi-run Lighthouse** — Median values for accuracy
+- **Artifact uploads** — Detailed results preserved
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ```bash
 # npm
@@ -77,19 +76,19 @@ pnpm add -g vantage
 
 ---
 
-## 🏃 Quick Start
+## Quick Start
 
 ```bash
-# 1️⃣ Initialize configuration (creates .vantage.yml)
+# Initialize configuration (creates .vantage.yml)
 vantage init
 
-# 2️⃣ Run all performance checks
+# Run all performance checks
 vantage check
 
-# 3️⃣ Analyze bundles only
+# Analyze bundles only
 vantage bundle
 
-# 4️⃣ Launch the dashboard 🎨
+# Launch the dashboard
 vantage dashboard
 ```
 
@@ -97,7 +96,7 @@ vantage dashboard
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Create a `.vantage.yml` file in your project root:
 
@@ -105,9 +104,7 @@ Create a `.vantage.yml` file in your project root:
 # Framework detection
 framework: nextjs
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 📦 Bundle Analysis
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Bundle Analysis
 bundle:
   analysis: deep              # deep | standard
   outputDir: .next           # Build output directory
@@ -121,9 +118,7 @@ bundle:
     regression: 10          # % increase that triggers failure
     warning: 5              # % increase that triggers warning
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ⚡ Runtime Performance
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Runtime Performance
 runtime:
   routes:
     - /
@@ -145,20 +140,19 @@ runtime:
 
 ---
 
-## 📜 Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `vantage init` | ⚙️ Initialize configuration file |
-| `vantage check` | 🔍 Run all performance checks (bundle + runtime) |
-| `vantage bundle` | 📦 Analyze bundle size and composition |
-| `vantage runtime` | ⚡ Run Lighthouse performance tests |
-| `vantage dashboard` | 🎨 Launch performance dashboard |
-| `vantage github` | 🤖 GitHub Actions integration |
+| `vantage init` | Initialize configuration file |
+| `vantage check` | Run all performance checks (bundle + runtime) |
+| `vantage bundle` | Analyze bundle size and composition |
+| `vantage dashboard` | Launch performance dashboard |
+| `vantage github` | GitHub Actions integration |
 
 ---
 
-## 🎨 Dashboard Preview
+## Dashboard Preview
 
 ### Main Dashboard
 - **Quick stats cards** — LCP, INP, CLS, Bundle Size at a glance
@@ -171,14 +165,12 @@ runtime:
 - **Color-coded sizes** — Green (good) → Yellow (warning) → Red (critical)
 - **Keyboard navigation** — Full accessibility support
 
-### Features
-- 🌙 **Dark mode** — System-aware with manual toggle
-- 🔄 **Auto-refresh** — Live data updates via Server-Sent Events
-- 🔍 **Search & filter** — Find specific bundles or routes
-- 📤 **Export** — Download data as CSV or JSON
-- ⌨️ **Keyboard accessible** — Full keyboard navigation support
+### Dashboard Features
+- **Auto-refresh** — Live data updates via Server-Sent Events
+- **Search & filter** — Find specific bundles or routes
+- **Keyboard accessible** — Full keyboard navigation support
 
-### Configuration
+### Dashboard Configuration
 
 The dashboard can be configured with environment variables. Create a `.env.local` file in the `dashboard/` directory:
 
@@ -191,7 +183,7 @@ See `dashboard/.env.example` for a complete list of available configuration opti
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 vantage/
@@ -200,13 +192,13 @@ vantage/
 │   │   ├── init.ts
 │   │   ├── check.ts
 │   │   ├── bundle.ts
-│   │   ├── runtime.ts
-│   │   └── dashboard.ts
+│   │   ├── dashboard.ts
+│   │   └── github.ts
 │   ├── analyzers/
 │   │   ├── bundle/         # Bundle analysis logic
 │   │   └── runtime/        # Runtime metrics logic
 │   ├── core/              # Configuration, storage, reporting
-│   ├── integrations/      # GitHub, GitLab, etc.
+│   ├── integrations/      # GitHub API integration
 │   └── templates/         # HTML/CSS templates
 ├── dashboard/            # Next.js Dashboard
 │   ├── app/
@@ -218,41 +210,42 @@ vantage/
 │   │   ├── charts/        # Charts and visualizations
 │   │   └── layout/        # Header, Footer
 │   └── lib/               # Storage layer, utilities
-└── examples/             # Example Next.js apps
+├── tests/                # Unit tests
+└── examples/             # Example Next.js app
 ```
 
 ---
 
-## 🔗 Next.js Integration
+## Next.js Integration
 
-### ✅ App Router
+### App Router
 - Auto-detects routes from `app/` directory
 - Handles dynamic routes (`[id]`, `[...slug]`)
 - Excludes API routes and middleware automatically
 
-### ✅ Pages Router
+### Pages Router
 - Auto-detects routes from `pages/` directory
 - Supports all dynamic route patterns
 
-### 📋 Supported Frameworks
+### Supported Frameworks
 | Framework | Status | Notes |
 |-----------|--------|-------|
-| Next.js App Router | ✅ Full | Auto-detection |
-| Next.js Pages Router | ✅ Full | Auto-detection |
-| Turbopack | 🔄 Planned | v2.0 roadmap |
-| React (CRA) | 🔄 Planned | v2.0 roadmap |
-| Vue 3 / Vite | 🔄 Planned | v2.0 roadmap |
+| Next.js App Router | Supported | Auto-detection |
+| Next.js Pages Router | Supported | Auto-detection |
+| Turbopack | Planned | v2.0 roadmap |
+| React (CRA) | Planned | v2.0 roadmap |
+| Vue 3 / Vite | Planned | v2.0 roadmap |
 
 ---
 
-## 🤖 CI/CD Setup
+## CI/CD Setup
 
 ### GitHub Actions
 
 Create `.github/workflows/performance.yml`:
 
 ```yaml
-name: 🎯 Performance Checks
+name: Performance Checks
 
 on:
   pull_request:
@@ -265,22 +258,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: 🚀 Install Vantage
+      - name: Install Vantage
         run: npm install -g vantage
 
-      - name: 🔍 Run performance checks
+      - name: Run performance checks
         run: vantage check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -288,7 +281,7 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
           GITHUB_SHA: ${{ github.sha }}
 
-      - name: 💬 Post results to PR
+      - name: Post results to PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
@@ -296,7 +289,7 @@ jobs:
           script: |
             node dist/integrations/github.js post-comment
 
-      - name: ✅ Set status check
+      - name: Set status check
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
@@ -305,27 +298,23 @@ jobs:
             node dist/integrations/github.js set-status
 ```
 
-### GitLab CI (Coming v2.0)
-
-### Bitbucket Pipelines (Coming v2.0)
-
 ---
 
-## 🎯 Roadmap
+## Roadmap
 
-### ✅ v1.0 — Current Release
+### v1.0 — Current Release
 - [x] CLI foundation with oclif
 - [x] Deep bundle analysis
 - [x] Runtime metrics with Lighthouse
-- [x] **Modern dashboard with shadcn/ui**
-- [x] **Dark mode support**
-- [x] **Real-time data integration**
-- [x] **Keyboard navigation & accessibility**
+- [x] Modern dashboard with shadcn/ui
+- [x] Dark theme
+- [x] Real-time data integration
+- [x] Keyboard navigation & accessibility
 - [x] GitHub Actions integration
 - [x] Comprehensive test coverage
 - [x] TypeScript throughout
 
-### 🚀 v2.0 — Planned
+### v2.0 — Planned
 - [ ] Turbopack support
 - [ ] Visual regression tests (Playwright)
 - [ ] React (Vite/CRA) support
@@ -338,17 +327,16 @@ jobs:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- [Installation Guide](docs/installation.md)
 - [Configuration Reference](docs/configuration.md)
-- [Next.js Integration](docs/nextjs-guide.md)
+- [Usage Guide](docs/usage.md)
 - [CI/CD Setup](docs/ci-setup.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md).
 
@@ -360,16 +348,16 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 ---
 
-## 📄 License
+## License
 
-MIT © [tanRdev](https://github.com/tanRdev)
+MIT © [Tan](https://github.com/tanRdev)
 
 ---
 
 <div align="center">
 
-  **Built with ❤️ using TypeScript, Next.js, and shadcn/ui**
+  **Built with TypeScript, Next.js, and shadcn/ui**
 
-  ⭐ Star us on GitHub — [github.com/tanRdev/vantage](https://github.com/tanRdev/vantage)
+  [github.com/tanRdev/vantage](https://github.com/tanRdev/vantage)
 
 </div>

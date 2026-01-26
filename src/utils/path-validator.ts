@@ -73,14 +73,6 @@ export function validateDashboardPath(inputPath: string): boolean {
     }
   }
 
-  // Normalize the path to resolve any . or .. segments
-  let normalizedPath: string;
-  try {
-    normalizedPath = path.normalize(inputPath);
-  } catch {
-    return false;
-  }
-
   // Ensure the path doesn't escape the current directory
   const resolved = path.resolve(inputPath);
   const cwd = process.cwd();

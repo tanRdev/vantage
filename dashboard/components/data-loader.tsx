@@ -43,7 +43,7 @@ export function DataLoader<T>({
           <AlertDescription className="flex flex-col items-center gap-4">
             <span>{error}</span>
             <Button
-              variant="outline"
+              variant="glass"
               size="sm"
               onClick={onRetry || (() => window.location.reload())}
             >

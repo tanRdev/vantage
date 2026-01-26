@@ -12,7 +12,8 @@
     "dev": "tsc --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:ui": "@vitest/ui",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -27,7 +28,7 @@
     "ci-cd",
     "github-actions"
   ],
-  "author": "Your Name",
+  "author": "Tan",
   "license": "MIT",
   "files": [
     "dist",

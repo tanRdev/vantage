@@ -4,7 +4,6 @@ import * as path from "path";
 import * as os from "os";
 
 const SHUTDOWN_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const;
-type ShutdownSignal = (typeof SHUTDOWN_SIGNALS)[number];
 
 // Valid metric column names for getRuntimeTrend - using a readonly Set for O(1) lookup
 const VALID_RUNTIME_METRICS = new Set([

@@ -28,3 +28,12 @@ coverage/
 # Environment
 .env
 .env.local
+
+# Build cache
+tsconfig.tsbuildinfo
+
+# Database
+*.db
+
+# Project config (use .vantage.yml.example)
+.vantage.yml

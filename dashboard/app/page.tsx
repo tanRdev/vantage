@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Loader2, Activity, Package, GitBranch } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { DataLoader } from '../components/data-loader'
-import { ExportButton } from '../components/export-button'
+
 import { RefreshCw } from 'lucide-react'
 import { MonoText } from '../components/ui/mono-text'
 import type { BundleTrendDataPoint } from '@/types/api'
@@ -210,9 +210,8 @@ export default function Home() {
 
         {/* Bundle Analysis */}
         <Card className="col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="pb-3">
             <CardTitle>BUNDLE ANALYSIS</CardTitle>
-            <ExportButton data={bundles} filename="bundles" />
           </CardHeader>
           <CardContent>
             <BundleTable data={bundles} />
@@ -234,7 +233,6 @@ export default function Home() {
             <GitBranch className="h-4 w-4" strokeWidth={1.5} />
             ROUTE PERFORMANCE
           </CardTitle>
-          <ExportButton data={routes} filename="routes" />
         </CardHeader>
         <CardContent>
           <RouteTable data={routes} />

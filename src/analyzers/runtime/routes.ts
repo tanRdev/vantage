@@ -171,7 +171,7 @@ export class RouteDetector {
     return excludePatterns.some(pattern => {
       // Escape special regex characters to prevent ReDoS
       // Order: escape special chars first, then convert * to .* glob pattern
-      let regexPattern = pattern
+      const regexPattern = pattern
         .replace(/[.+?^${}()|[\]\\]/g, '\\$&')  // Escape special regex chars except *
         .replace(/\*/g, '.*');                   // Convert glob * to .* (after escaping)
 

@@ -31,7 +31,7 @@ export class TreemapGenerator {
   }
 
   async generateHTML(data: TreemapNode, outputPath: string): Promise<void> {
-    const html = await this.buildHTML(data, outputPath);
+    const html = await this.buildHTML(data);
 
     try {
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -43,10 +43,7 @@ export class TreemapGenerator {
     }
   }
 
-  private async buildHTML(
-    data: TreemapNode,
-    _outputPath: string,
-  ): Promise<string> {
+  private async buildHTML(data: TreemapNode): Promise<string> {
     const templatePath = path.join(this.templatesDir, "treemap.html");
     let html = fs.readFileSync(templatePath, "utf-8");
 

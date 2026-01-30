@@ -286,9 +286,4 @@ export class LighthouseRunner {
 
     return mapping[this.options.preset] || "desktop";
   }
-
-  private getOutputPath(url: string, runIndex: number): string {
-    const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, "_");
-    return `${sanitizedUrl}_run${runIndex}.json`;
-  }
 }

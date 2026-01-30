@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { TrendChart } from '../components/charts/TrendChart'
-import { BundleTable } from '../components/charts/BundleTable'
-import { RouteTable } from '../components/charts/RouteTable'
+import { BundleTable, type BundleMetric } from '../components/charts/BundleTable'
+import { RouteTable, type RouteMetric } from '../components/charts/RouteTable'
 import { BundleTrendChart } from '../components/charts/BundleTrendChart'
 import { MetricCard } from '../components/metric-card'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
@@ -37,6 +37,8 @@ export default function Home() {
   const [trends, setTrends] = useState<TrendData | null>(null)
   const [bundleTrends, setBundleTrends] = useState<BundleTrendData | null>(null)
   const [stats, setStats] = useState<StatsData | null>(null)
+  const [bundles, setBundles] = useState<BundleMetric[]>([])
+  const [routes, setRoutes] = useState<RouteMetric[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -44,10 +46,12 @@ export default function Home() {
   const fetchData = async (showRefreshLoader = false) => {
     try {
       if (showRefreshLoader) setIsRefreshing(true)
-      const [metricsRes, bundleTrendsRes, statsRes] = await Promise.all([
+      const [metricsRes, bundleTrendsRes, statsRes, bundlesRes, routesRes] = await Promise.all([
         api.getMetrics({ limit: 30 }),
         api.getBundleTrends({ limit: 50 }),
         api.getStats(),
+        api.getBundles({ limit: 20 }),
+        api.getRoutes({ limit: 20 }),
       ])
 
       if (metricsRes.success && metricsRes.data) {
@@ -66,6 +70,14 @@ export default function Home() {
           score: statsRes.data.latestMetrics?.score,
           bundle: statsRes.data.latestBundleSize,
         })
+      }
+
+      if (bundlesRes.success && bundlesRes.data) {
+        setBundles(bundlesRes.data)
+      }
+
+      if (routesRes.success && routesRes.data) {
+        setRoutes(routesRes.data)
       }
 
       setError(null)
@@ -200,10 +212,10 @@ export default function Home() {
         <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle>BUNDLE ANALYSIS</CardTitle>
-            <ExportButton data={[]} filename="bundles" />
+            <ExportButton data={bundles} filename="bundles" />
           </CardHeader>
           <CardContent>
-            <BundleTable />
+            <BundleTable data={bundles} />
           </CardContent>
         </Card>
       </div>
@@ -222,10 +234,10 @@ export default function Home() {
             <GitBranch className="h-4 w-4" strokeWidth={1.5} />
             ROUTE PERFORMANCE
           </CardTitle>
-          <ExportButton data={[]} filename="routes" />
+          <ExportButton data={routes} filename="routes" />
         </CardHeader>
         <CardContent>
-          <RouteTable />
+          <RouteTable data={routes} />
         </CardContent>
       </Card>
     </div>

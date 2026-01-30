@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { DataTable } from '../data-table'
-import { api } from '@/lib/api-client'
 import type { Column } from '../data-table'
 import { StatusIndicator } from '../ui/status-indicator'
-import { Loader2 } from 'lucide-react'
 import { MonoText } from '../ui/mono-text'
 import { cn } from '@/lib/utils'
 
@@ -21,42 +18,15 @@ export interface BundleMetric {
   status: 'pass' | 'warn' | 'fail'
 }
 
-export function BundleTable() {
-  const [bundles, setBundles] = useState<BundleMetric[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+interface BundleTableProps {
+  data?: BundleMetric[]
+}
 
-  useEffect(() => {
-    api.getBundles({ limit: 20 })
-      .then((res) => {
-        if (res.success && res.data) {
-          setBundles(res.data)
-        } else {
-          setError(res.error || 'Failed to load bundles')
-        }
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false))
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" strokeWidth={1.5} />
-      </div>
-    )
-  }
-
-  if (error) {
+export function BundleTable({ data }: BundleTableProps) {
+  if (!data || data.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
-        <MonoText className="text-xs">{error}</MonoText>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-2 text-status-purple hover:underline text-xs"
-        >
-          RETRY
-        </button>
+        <MonoText className="text-xs">NO BUNDLE DATA AVAILABLE. RUN 'VANTAGE CHECK' TO GENERATE METRICS.</MonoText>
       </div>
     )
   }
@@ -114,7 +84,7 @@ export function BundleTable() {
 
   return (
     <DataTable
-      data={bundles}
+      data={data}
       columns={columns}
       searchable
       searchKeys={['chunkName', 'status']}

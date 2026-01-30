@@ -132,7 +132,7 @@ describe("GitHubIntegration", () => {
         mockRepository,
         {
           retry: {
-            retries: 1,
+            maxRetries: 1,
             delayMs: 0,
           },
         },

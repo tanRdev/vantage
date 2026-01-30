@@ -95,7 +95,16 @@ export class BundleAnalyzer {
         return previous && previous.size !== current.size;
       })
       .map(current => {
-        const previous = previousChunks.find(p => p.id === current.id)!;
+        const previous = previousChunks.find(p => p.id === current.id);
+        if (!previous) {
+          // This should never happen due to the filter above, but handle gracefully
+          return {
+            chunk: current,
+            oldSize: 0,
+            newSize: current.size,
+            sizeDelta: current.size,
+          };
+        }
         return {
           chunk: current,
           oldSize: previous.size,

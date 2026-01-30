@@ -230,6 +230,8 @@ class DashboardStorage {
   }
 
   getBundlesByBuildId(buildId: number): BundleMetricRecord[] {
+    // Note: This queries by auto-increment ID, not by timestamp/build identifier
+    // For getting all metrics from a specific build (timestamp), use getBundlesByTimestamp
     const stmt = this.db.prepare(`
       SELECT * FROM bundle_metrics
       WHERE id = ?
@@ -238,6 +240,10 @@ class DashboardStorage {
     return rows.map((row) => this.normalizeBundleRecord(row));
   }
 
+  /**
+   * Get all bundle metrics for a specific build timestamp.
+   * This is the recommended method for retrieving all chunks from a single build.
+   */
   getBundlesByTimestamp(timestamp: number): BundleMetricRecord[] {
     const stmt = this.db.prepare(`
       SELECT * FROM bundle_metrics

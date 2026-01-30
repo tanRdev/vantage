@@ -16,13 +16,15 @@ export class ThresholdEngine {
   ): ThresholdResult {
     const delta = current - previous;
 
-    // When previous is 0, treat as baseline measurement (no meaningful comparison)
+    // When previous is 0, we cannot calculate percentage change.
+    // This could indicate a bug in bundle analysis (no size detected).
+    // Treat as a baseline but return info status.
     if (previous === 0) {
       return {
         passed: true,
         delta,
         status: "pass",
-        message: undefined,
+        message: "No previous bundle data for comparison (baseline measurement)",
       };
     }
 

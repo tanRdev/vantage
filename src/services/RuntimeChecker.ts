@@ -7,7 +7,14 @@ import {
 import { ThresholdEngine } from "../core/threshold.js";
 import type { RuntimeConfig } from "../core/config.js";
 import type { NextjsInfo } from "../analyzers/bundle/nextjs.js";
-import { PERFORMANCE_SCORE_PASS_THRESHOLD } from "../core/constants.js";
+import {
+  PERFORMANCE_SCORE_PASS_THRESHOLD,
+  METRIC_PRECISION_LCP,
+  METRIC_PRECISION_INP,
+  METRIC_PRECISION_CLS,
+  METRIC_PRECISION_TBT,
+} from "../core/constants.js";
+import { CheckFailedError } from "../core/errors.js";
 
 interface MetricResult {
   name: string;
@@ -69,11 +76,7 @@ export class RuntimeChecker {
 
     if (shouldBlock) {
       Reporter.error("Performance thresholds exceeded!");
-      const error = new Error("Performance thresholds exceeded") as Error & {
-        code: number;
-      };
-      error.code = 1;
-      throw error;
+      throw new CheckFailedError("Performance thresholds exceeded");
     }
 
     Reporter.success("All runtime checks passed!");
@@ -102,7 +105,7 @@ export class RuntimeChecker {
 
         results.push({
           name: `LCP (${routeName})`,
-          current: `${result.lcp.toFixed(0)}ms`,
+          current: `${result.lcp.toFixed(METRIC_PRECISION_LCP)}ms`,
           previous: "-",
           delta: "-",
           status: lcpResult.status,
@@ -118,7 +121,7 @@ export class RuntimeChecker {
 
         results.push({
           name: `INP (${routeName})`,
-          current: `${result.inp.toFixed(0)}ms`,
+          current: `${result.inp.toFixed(METRIC_PRECISION_INP)}ms`,
           previous: "-",
           delta: "-",
           status: inpResult.status,
@@ -134,7 +137,7 @@ export class RuntimeChecker {
 
         results.push({
           name: `CLS (${routeName})`,
-          current: result.cls.toFixed(3),
+          current: result.cls.toFixed(METRIC_PRECISION_CLS),
           previous: "-",
           delta: "-",
           status: clsResult.status,
@@ -150,7 +153,7 @@ export class RuntimeChecker {
 
         results.push({
           name: `TBT (${routeName})`,
-          current: `${result.tbt.toFixed(0)}ms`,
+          current: `${result.tbt.toFixed(METRIC_PRECISION_TBT)}ms`,
           previous: "-",
           delta: "-",
           status: tbtResult.status,

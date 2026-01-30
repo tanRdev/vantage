@@ -3,6 +3,7 @@ import Reporter from "../core/reporter.js";
 import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { RuntimeChecker } from "../services/RuntimeChecker.js";
 import { BundleChecker } from "../services/BundleChecker.js";
+import { CheckFailedError } from "../core/errors.js";
 
 export default class Check extends Command {
   static description = "Run all configured performance checks";
@@ -31,7 +32,7 @@ export default class Check extends Command {
           const runtimeChecker = new RuntimeChecker(process.cwd(), nextjsInfo, config.runtime);
           await runtimeChecker.check();
         } catch (error) {
-          if ((error as { code?: number }).code === 1) {
+          if (error instanceof CheckFailedError) {
             hasFailures = true;
           } else {
             throw error;
@@ -47,7 +48,7 @@ export default class Check extends Command {
         const bundleChecker = new BundleChecker(process.cwd(), config.bundle);
         bundleChecker.check();
       } catch (error) {
-        if ((error as { code?: number }).code === 1) {
+        if (error instanceof CheckFailedError) {
           hasFailures = true;
         } else {
           throw error;

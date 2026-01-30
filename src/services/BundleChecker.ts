@@ -2,6 +2,7 @@ import Reporter from "../core/reporter.js";
 import { NextjsParser } from "../analyzers/bundle/nextjs.js";
 import { BundleAnalyzer } from "../analyzers/bundle/analyzer.js";
 import type { BundleConfig } from "../core/config.js";
+import { CheckFailedError } from "../core/errors.js";
 
 export class BundleChecker {
   constructor(
@@ -57,9 +58,7 @@ export class BundleChecker {
     if (!hasFailures) {
       Reporter.success("All bundle checks passed!");
     } else {
-      const error = new Error("Bundle budget exceeded") as Error & { code: number };
-      error.code = 1;
-      throw error;
+      throw new CheckFailedError("Bundle budget exceeded");
     }
   }
 }

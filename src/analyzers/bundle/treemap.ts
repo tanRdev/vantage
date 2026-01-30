@@ -1,10 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-
-const SIZE_THRESHOLD_SMALL = 100 * 1024;
-const SIZE_THRESHOLD_MEDIUM = 500 * 1024;
-const SIZE_THRESHOLD_LARGE = 1024 * 1024;
+import {
+  SIZE_THRESHOLD_SMALL,
+  SIZE_THRESHOLD_MEDIUM,
+  SIZE_THRESHOLD_LARGE,
+  COLOR_SMALL,
+  COLOR_MEDIUM,
+  COLOR_LARGE,
+  COLOR_XLARGE,
+} from "../../core/constants.js";
 
 export interface TreemapNode {
   name: string;
@@ -71,10 +76,10 @@ const SIZE_THRESHOLD_MEDIUM = ${SIZE_THRESHOLD_MEDIUM};
 const SIZE_THRESHOLD_LARGE = ${SIZE_THRESHOLD_LARGE};
 
 // Color constants
-const COLOR_SMALL = "#4CAF50";
-const COLOR_MEDIUM = "#2196F3";
-const COLOR_LARGE = "#FF9800";
-const COLOR_XLARGE = "#F44336";
+const COLOR_SMALL = "${COLOR_SMALL}";
+const COLOR_MEDIUM = "${COLOR_MEDIUM}";
+const COLOR_LARGE = "${COLOR_LARGE}";
+const COLOR_XLARGE = "${COLOR_XLARGE}";
 
 function getColor(size) {
   if (size < SIZE_THRESHOLD_SMALL) return COLOR_SMALL;

@@ -106,12 +106,12 @@ export async function withRetry<T>(
 }
 
 export interface GitHubRetryOptions {
-  retries: number;
-  delayMs: number;
+  maxRetries?: number;
+  delayMs?: number;
 }
 
 const defaultRetryOptions: GitHubRetryOptions = {
-  retries: 3,
+  maxRetries: 3,
   delayMs: 500,
 };
 
@@ -136,7 +136,8 @@ export class GitHubIntegration {
     this.repo = parts[1];
     this.resultsPath = ".vantage/results.json";
     this.retryOptions = {
-      ...defaultRetryOptions,
+      maxRetries: defaultRetryOptions.maxRetries,
+      delayMs: defaultRetryOptions.delayMs,
       ...options?.retry,
     };
   }
@@ -169,13 +170,18 @@ export class GitHubIntegration {
     const comment = this.generateComment(results);
 
     try {
-      const result = await this.withRetry(() =>
-        this.octokit.rest.issues.createComment({
-          owner: this.owner,
-          repo: this.repo,
-          issue_number: prNumber,
-          body: comment,
-        }),
+      const result = await withRetry(
+        () =>
+          this.octokit.rest.issues.createComment({
+            owner: this.owner,
+            repo: this.repo,
+            issue_number: prNumber,
+            body: comment,
+          }),
+        {
+          maxRetries: this.retryOptions.maxRetries,
+          delayFn: () => this.retryOptions.delayMs ?? 500,
+        },
       );
 
       Reporter.info(`Posted performance comment to PR #${prNumber}`);
@@ -211,13 +217,18 @@ export class GitHubIntegration {
     const comment = this.generateComment(results);
 
     try {
-      await this.withRetry(() =>
-        this.octokit.rest.issues.updateComment({
-          owner: this.owner,
-          repo: this.repo,
-          comment_id: commentId,
-          body: comment,
-        }),
+      await withRetry(
+        () =>
+          this.octokit.rest.issues.updateComment({
+            owner: this.owner,
+            repo: this.repo,
+            comment_id: commentId,
+            body: comment,
+          }),
+        {
+          maxRetries: this.retryOptions.maxRetries,
+          delayFn: () => this.retryOptions.delayMs ?? 500,
+        },
       );
 
       Reporter.info(`Updated performance comment on PR #${prNumber}`);
@@ -252,15 +263,20 @@ export class GitHubIntegration {
     }
 
     try {
-      await this.withRetry(() =>
-        this.octokit.rest.repos.createCommitStatus({
-          owner: this.owner,
-          repo: this.repo,
-          sha,
-          state,
-          description,
-          context: "vantage",
-        }),
+      await withRetry(
+        () =>
+          this.octokit.rest.repos.createCommitStatus({
+            owner: this.owner,
+            repo: this.repo,
+            sha,
+            state,
+            description,
+            context: "vantage",
+          }),
+        {
+          maxRetries: this.retryOptions.maxRetries,
+          delayFn: () => this.retryOptions.delayMs ?? 500,
+        },
       );
 
       Reporter.info(`Set status check: ${state} - ${description}`);
@@ -278,14 +294,19 @@ export class GitHubIntegration {
       const perPage = 100;
 
       while (true) {
-        const response = await this.withRetry(() =>
-          this.octokit.rest.issues.listComments({
-            owner: this.owner,
-            repo: this.repo,
-            issue_number: prNumber,
-            per_page: perPage,
-            page,
-          }),
+        const response = await withRetry(
+          () =>
+            this.octokit.rest.issues.listComments({
+              owner: this.owner,
+              repo: this.repo,
+              issue_number: prNumber,
+              per_page: perPage,
+              page,
+            }),
+          {
+            maxRetries: this.retryOptions.maxRetries,
+            delayFn: () => this.retryOptions.delayMs ?? 500,
+          },
         );
 
         const comments = response.data;
@@ -393,27 +414,6 @@ export class GitHubIntegration {
     if (value <= threshold) return "PASS";
     if (value <= threshold * 1.1) return "WARN";
     return "FAIL";
-  }
-
-  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
-    const { retries, delayMs } = this.retryOptions;
-    let lastError: unknown;
-
-    for (let attempt = 0; attempt <= retries; attempt += 1) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error;
-        if (attempt >= retries) {
-          break;
-        }
-        if (delayMs > 0) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-    }
-
-    throw lastError ?? new Error("Retry attempts exhausted");
   }
 }
 

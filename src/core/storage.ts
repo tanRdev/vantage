@@ -185,13 +185,13 @@ export class Storage {
           stmt.run(
             record.timestamp,
             record.branch,
-            record.commit || null,
-            record.lcp || null,
-            record.inp || null,
-            record.cls || null,
-            record.fcp || null,
-            record.ttfb || null,
-            record.score || null,
+            record.commit ?? null,
+            record.lcp ?? null,
+            record.inp ?? null,
+            record.cls ?? null,
+            record.fcp ?? null,
+            record.ttfb ?? null,
+            record.score ?? null,
             record.status,
           );
         }
@@ -213,9 +213,9 @@ export class Storage {
           stmt.run(
             record.timestamp,
             record.branch,
-            record.commit || null,
+            record.commit ?? null,
             record.chunkName,
-            record.oldSize || null,
+            record.oldSize ?? null,
             record.newSize,
             record.delta,
             record.status,
@@ -236,7 +236,7 @@ export class Storage {
     stmt.run(
       record.timestamp,
       record.branch,
-      record.commit || null,
+      record.commit ?? null,
       record.checkType,
       record.status,
       record.duration,
@@ -318,6 +318,45 @@ export class Storage {
     `);
 
     return stmt.get(branch, chunkName) as BundleMetricRecord | null;
+  }
+
+  /**
+   * Get all bundle metrics for a specific build timestamp.
+   * This is useful for retrieving all chunks from a single build.
+   */
+  getBundlesByTimestamp(timestamp: number, branch?: string): BundleMetricRecord[] {
+    let query = "SELECT * FROM bundle_metrics WHERE timestamp = ?";
+    const params: (string | number)[] = [timestamp];
+
+    if (branch) {
+      query += " AND branch = ?";
+      params.push(branch);
+    }
+
+    const stmt = this.db.prepare(query);
+    const rows = stmt.all(...params) as Array<{
+      id: number;
+      timestamp: number;
+      branch: string;
+      commit?: string;
+      chunk_name: string;
+      old_size?: number;
+      new_size: number;
+      delta: number;
+      status: "pass" | "warn" | "fail";
+    }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      timestamp: row.timestamp,
+      branch: row.branch,
+      commit: row.commit,
+      chunkName: row.chunk_name,
+      oldSize: row.old_size,
+      newSize: row.new_size,
+      delta: row.delta,
+      status: row.status,
+    }));
   }
 
   getRuntimeTrend(

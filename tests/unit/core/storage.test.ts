@@ -1358,10 +1358,13 @@ describe("Storage", () => {
       expect(() => storage.saveRuntimeMetrics([metric])).not.toThrow();
 
       const history = storage.getRuntimeHistory();
-      // Note: Due to the use of `|| null` in the source code, 0 values are stored as NULL
-      // This is a known behavior/bug in the current implementation
-      expect(history[0].lcp).toBeNull();
-      expect(history[0].score).toBeNull();
+      // After fixing the || null bug, 0 values are now preserved
+      expect(history[0].lcp).toBe(0);
+      expect(history[0].inp).toBe(0);
+      expect(history[0].cls).toBe(0);
+      expect(history[0].fcp).toBe(0);
+      expect(history[0].ttfb).toBe(0);
+      expect(history[0].score).toBe(0);
     });
 
     it("should handle decimal metric values", () => {

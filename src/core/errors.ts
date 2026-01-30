@@ -39,3 +39,16 @@ export class ValidationError extends VantageError {
     this.name = "ValidationError";
   }
 }
+
+/**
+ * Error thrown when performance checks fail (e.g., budget exceeded, thresholds exceeded).
+ * Contains a numeric exit code for CLI purposes.
+ */
+export class CheckFailedError extends VantageError {
+  readonly code = 1;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "CheckFailedError";
+  }
+}

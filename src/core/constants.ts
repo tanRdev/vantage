@@ -27,3 +27,13 @@ export const DEFAULT_THROTTLING = "fast-3g" as const;
 // Config file
 export const CONFIG_FILE = ".vantage.yml";
 export const OUTPUT_DIR = ".vantage";
+
+// Metric formatting precision (decimal places)
+export const METRIC_PRECISION_LCP = 0;       // LCP displayed as whole milliseconds
+export const METRIC_PRECISION_INP = 0;       // INP displayed as whole milliseconds
+export const METRIC_PRECISION_CLS = 3;       // CLS displayed to 3 decimal places
+export const METRIC_PRECISION_TBT = 0;       // TBT displayed as whole milliseconds
+export const METRIC_PRECISION_FCP = 0;       // FCP displayed as whole milliseconds
+export const METRIC_PRECISION_TTFB = 0;      // TTFB displayed as whole milliseconds
+export const METRIC_PRECISION_SCORE = 0;     // Score displayed as whole number
+export const METRIC_PRECISION_PERCENTAGE = 1; // Percentages displayed to 1 decimal place

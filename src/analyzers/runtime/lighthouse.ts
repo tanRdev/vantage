@@ -246,7 +246,8 @@ export class LighthouseRunner {
       }
 
       return result;
-    } catch {
+    } catch (error) {
+      Reporter.error("Failed to parse Lighthouse JSON output", error instanceof Error ? error : new Error(String(error)));
       return {};
     }
   }
